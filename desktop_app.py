@@ -6,6 +6,15 @@ import threading
 import asyncio
 from pathlib import Path
 
+# Explicit imports for PyInstaller packaging of dynamic DB dialects & async runtime
+import aiosqlite
+import greenlet
+import sqlalchemy.dialects.sqlite.aiosqlite
+import uvicorn.logging
+import uvicorn.loops.auto
+import uvicorn.protocols.http.auto
+import uvicorn.lifespan.on
+
 # Set default env vars for desktop standalone mode if not set
 os.environ.setdefault("APP_ENV", "production")
 os.environ["DESKTOP_MODE"] = "1"
