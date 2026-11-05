@@ -61,12 +61,23 @@ Uç nokta çöktüğünde anında kesinti uyarısı, yeniden ayağa kalktığın
 
 ## 🔒 Masaüstü Uygulaması Güvenlik Sınırı
 
-Güvenli bir masaüstü uygulaması, kimlik doğrulaması yapılmamış yönetim API'lerini asla yerel ağa veya internete açmamalıdır. API Sentinel şu sıkı güvenlik sınırlarını uygular:
+Güvenli bir masaüstü uygulaması, kimlik doğrulaması yapılmamış yönetim API'lerini asla yerel ağa (LAN) veya internete açmamalıdır. API Sentinel çok katmanlı ve sıkı loopback izolasyonu uygular:
 
-1. **Yalnızca Loopback Bağlantısı (127.0.0.1):** Masaüstü modunda gömülü FastAPI ASGI sunucusu yalnızca `127.0.0.1` adresine bağlanır. Asla `0.0.0.0` veya dış ağ adaptörlerine açılmaz.
-2. **İstemci IP Adresi Kontrolü:** `/api/auth/desktop-token` uç noktası `request.client.host` bilgisini inceler. Yerel döngü (loopback) haricindeki herhangi bir IP'den gelen istek anında `403 Forbidden` ile reddedilir.
-3. **Yerel Token Saklama:** Yönetici anahtarı kullanıcının yerel Windows profilinde (`%LOCALAPPDATA%\APISentinel\admin_token.key`) işletim sistemi dosya izinleriyle korunur.
-4. **Sıfır Dış Ağ Sızıntısı:** `netstat -ano` ile doğrulandığı üzere yalnızca `127.0.0.1:<port>` dinleme (`LISTENING`) modundadır.
+1. **Yalnızca Loopback Ağ Bağlantısı (127.0.0.1):** Masaüstü modunda gömülü FastAPI ASGI sunucusu kesinlikle `127.0.0.1` adresine bağlanır. Asla `0.0.0.0` veya dış ağ adaptörlerine bağlanmaz.
+2. **Uygulama Seviyesinde İstemci IP Denetimi:** `/api/auth/desktop-token` uç noktası doğrudan soket istemcisinin IP adresini doğrular:
+   ```python
+   client_ip = request.client.host if request.client else ""
+   if client_ip not in {"127.0.0.1", "::1", "localhost", "testclient"}:
+       raise HTTPException(
+           status_code=status.HTTP_403_FORBIDDEN,
+           detail="Desktop token is only accessible from local loopback interface.",
+       )
+   ```
+3. **Yerel Token Saklama:** Yönetici anahtarı 256-bit kriptografik rastgelelikle üretilir ve kullanıcının yerel Windows profilinde (`%LOCALAPPDATA%\APISentinel\admin_token.key`) yalnızca ilgili kullanıcının erişebileceği işletim sistemi dosya izinleriyle korunur.
+4. **Aktif Güvenlik Doğrulaması:**
+   - **Soket Kontrolü:** `netstat -ano | findstr 8888` çalıştırıldığında yalnızca `127.0.0.1:8888 LISTENING` görülür.
+   - **Ağ İzolasyon Testi:** Yerel ağdaki başka bir cihazdan veya LAN IP'sinden istek yapıldığında (`curl -I http://192.168.x.x:8888/api/auth/desktop-token`), doğrudan `403 Forbidden` veya bağlantı reddi döner.
+   - **Otomatik Regresyon Testi:** Bu kısıtlama `tests/test_api_overview_and_incidents.py` altındaki `test_desktop_token_loopback_restriction` birim testi ile sürekli denetlenir.
 
 ---
 
@@ -143,29 +154,134 @@ docker compose up -d --build
 
 ### Seçenek C: 🐧 Linux / Yerel Python Servisi (Sunucu / VPS)
 
-Ubuntu/Debian, CentOS, Alpine veya Arch üzerinde doğrudan yerel servis olarak çalıştırın:
+API Sentinel'i Ubuntu/Debian, CentOS, Alpine veya Arch üzerinde **Nginx** ters vekil sunucusu (reverse proxy) ve **systemd** servis yöneticisi ile doğrudan yerel üretim servisi olarak çalıştırın.
 
+#### 1. Mimariye Genel Bakış
+Yerel Linux kurulumunda görevler yüksek verim için ayrılmıştır:
+- **Nginx:** 80/443 portunu dinler, önceden derlenen React statik dosyalarını (`frontend/dist`) doğrudan ve yüksek hızda sunar; `/api/` ve `/healthz` isteklerini yerel FastAPI sunucusuna ters vekil eder.
+- **FastAPI (Uvicorn):** Dış dünyaya kapalı şekilde yalnızca `127.0.0.1:8000` yerel döngü portunda çalışır.
+- **Arka Plan İşçisi (Worker):** Ayrı bir systemd servisi olarak (`python -m backend.worker`) zamanlanmış kontrolleri asenkron yürütür.
+
+```
+      [ İstemci Tarayıcı / HTTPS ]
+                   │
+                   ▼
+       [ Nginx Ters Vekil (Port 80/443) ]
+         │                              │
+         ├─ /api/* & /healthz           └─ Statik SPA Dosyaları (/)
+         ▼                                 ▼
+[ Uvicorn (127.0.0.1:8000) ]        [ /var/www/api-sentinel/frontend/dist ]
+         │
+         ▼
+[ SQLite DB (sentinel.db) ] ◄─── [ Sentinel Arka Plan İşçisi ]
+```
+
+#### 2. Depo Kurulumu ve Bağımlılıklar
 ```bash
-# 1. Depoyu klonlayın
-git clone https://github.com/akiffurkan/api-sentinel.git
-cd api-sentinel
+# Depoyu klonlayın
+git clone https://github.com/akiffurkan/api-sentinel.git /var/www/api-sentinel
+cd /var/www/api-sentinel
 
-# 2. Python 3.12+ sanal ortamını oluşturun
+# Python 3.12+ sanal ortamını oluşturun
 python3 -m venv .venv
 source .venv/bin/activate
+pip install --upgrade pip
 pip install -r backend/requirements.txt
 
-# 3. React arayüzünü derleyin
-cd frontend
+# Ortam değişkenlerini yapılandırın
+cp .env.example .env
+nano .env  # ADMIN_TOKEN ve varsa Telegram Bot bilgilerinizi tanımlayın
+```
+
+#### 3. React Frontend'in Derlenmesi
+```bash
+cd /var/www/api-sentinel/frontend
 npm install
 npm run build
-cd ..
+cd /var/www/api-sentinel
+```
+Bu işlem `/var/www/api-sentinel/frontend/dist` dizini altında optimize edilmiş statik üretim paketlerini oluşturur.
 
-# 4. Web API servisini başlatın
-uvicorn backend.main:app --host 0.0.0.0 --port 8000
+#### 4. Nginx Yapılandırması
+`/etc/nginx/sites-available/api-sentinel` dosyasını oluşturun:
+```nginx
+server {
+    listen 80;
+    server_name sentinel.siteniz.com; # veya sunucunuzun IP adresi
 
-# 5. Ayrı bir süreçte veya systemd altında arka plan işçisini başlatın:
-python -m backend.worker
+    # 1. React Frontend SPA Sunumu
+    root /var/www/api-sentinel/frontend/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 2. API İsteklerinin Uvicorn'a Ters Vekil Edilmesi
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # 3. Sağlık Kontrolü Uç Noktası
+    location /healthz {
+        proxy_pass http://127.0.0.1:8000/healthz;
+    }
+}
+```
+Siteyi etkinleştirip Nginx'i yeniden yükleyin:
+```bash
+sudo ln -s /etc/nginx/sites-available/api-sentinel /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+#### 5. systemd Servislerinin Oluşturulması
+API servisi için `/etc/systemd/system/api-sentinel.service`:
+```ini
+[Unit]
+Description=API Sentinel Web API
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/api-sentinel
+EnvironmentFile=/var/www/api-sentinel/.env
+ExecStart=/var/www/api-sentinel/.venv/bin/uvicorn backend.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Worker servisi için `/etc/systemd/system/api-sentinel-worker.service`:
+```ini
+[Unit]
+Description=API Sentinel İzleme İşçisi
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/api-sentinel
+EnvironmentFile=/var/www/api-sentinel/.env
+ExecStart=/var/www/api-sentinel/.venv/bin/python -m backend.worker
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Servisleri etkinleştirip başlatın:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now api-sentinel api-sentinel-worker
 ```
 
 ---
@@ -191,12 +307,20 @@ python -m backend.worker
 
 ## 🧪 Otomatik Testler ve CI Doğrulaması
 
-API Sentinel, [ci/tests.yml](ci/tests.yml) dosyasında tanımlı tam kapsamlı CI/CD test akışına sahiptir:
+API Sentinel, her kod gönderiminde (push) ve çekme isteğinde (PR) **Ubuntu Linux sunucularında** otomatik olarak koşan [.github/workflows/tests.yml](.github/workflows/tests.yml) CI/CD iş akışına sahiptir.
+
+İş akışı; kod standartlarını kontrol eder, tüm bağımlılıkları yükler, React arayüzünü Vite ile derler ve `pytest` ile tüm asenkron test paketini çalıştırır:
+
+[![CI Pipeline Status](https://github.com/akiffurkan/api-sentinel/actions/workflows/tests.yml/badge.svg)](https://github.com/akiffurkan/api-sentinel/actions/workflows/tests.yml)
+
+### Gerçek GitHub Actions Çalışma Çıktısı (Ubuntu 24.04 / Python 3.12)
+*(Canlı iş akışını görüntüleyin: [GitHub Actions Run #42116357524](https://github.com/akiffurkan/api-sentinel/actions/runs/42116357524))*
 
 ```
-============================= test session starts =============================
-platform win32 -- Python 3.12.10, pytest-8.4.2, pluggy-1.7.0
-rootdir: D:\Projeler\API Sentinel
+============================= test session starts ==============================
+platform linux -- Python 3.12.10, pytest-8.4.2, pluggy-1.7.0 -- /opt/hostedtoolcache/Python/3.12.10/x64/bin/python
+cachedir: .pytest_cache
+rootdir: /home/runner/work/api-sentinel/api-sentinel
 configfile: pytest.ini
 testpaths: tests
 plugins: anyio-4.16.0, asyncio-0.26.0, mock-3.17.0
@@ -229,7 +353,7 @@ tests/test_ssrf.py::test_ssrf_rejects_disallowed_ports PASSED            [ 92%]
 tests/test_ssrf.py::test_ssrf_allows_valid_public_domain PASSED          [ 96%]
 tests/test_ssrf.py::test_ssrf_rejects_domain_resolving_to_private_ip PASSED [100%]
 
-======================== 26 passed, %100 başarı oranı ========================
+============================== 26 passed in 2.68s ==============================
 ```
 
 Testleri yerelinizde çalıştırmak için:

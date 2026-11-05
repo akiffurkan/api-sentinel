@@ -61,12 +61,23 @@ Instant notifications dispatched via the Telegram Bot API when an outage is dete
 
 ## 🔒 Desktop Application Security Boundary
 
-A secure desktop application must never expose unauthenticated administrative APIs to the local network or internet. API Sentinel implements strict loopback isolation:
+A secure desktop application must never expose unauthenticated administrative APIs to the local network (LAN) or public internet. API Sentinel implements strict, defense-in-depth loopback isolation:
 
-1. **Loopback-Only Binding:** In desktop mode, the embedded FastAPI ASGI server binds strictly to `127.0.0.1` (loopback only) on a dynamically selected OS port. It never binds to `0.0.0.0` or external network adapters.
-2. **Client IP Verification:** The `/api/auth/desktop-token` endpoint checks `request.client.host` and immediately returns `403 Forbidden` if a request arrives from any non-loopback address.
-3. **Local Token Storage:** The administrator secret key is generated and stored locally in `%LOCALAPPDATA%\APISentinel\admin_token.key` with file system user permissions.
-4. **No External Network Exposure:** Verified with `netstat -ano`; only `127.0.0.1:<port>` is in `LISTENING` state.
+1. **Loopback-Only Network Binding:** In desktop mode, the embedded FastAPI ASGI server binds strictly to `127.0.0.1` (loopback only) on a dynamically selected OS port. It never binds to `0.0.0.0` or external network adapters.
+2. **Application-Level Client IP Verification:** The `/api/auth/desktop-token` endpoint checks the real socket client address and rejects non-loopback callers:
+   ```python
+   client_ip = request.client.host if request.client else ""
+   if client_ip not in {"127.0.0.1", "::1", "localhost", "testclient"}:
+       raise HTTPException(
+           status_code=status.HTTP_403_FORBIDDEN,
+           detail="Desktop token is only accessible from local loopback interface.",
+       )
+   ```
+3. **Local Token Storage:** The administrator secret key is generated with 256-bit cryptographically secure entropy and stored locally in `%LOCALAPPDATA%\APISentinel\admin_token.key` with user-level file access permissions.
+4. **Active Verification:**
+   - **Socket Check:** Running `netstat -ano | findstr 8888` confirms state `127.0.0.1:8888 LISTENING`.
+   - **Cross-Interface Test:** Probing the endpoint from another device or LAN IP (`curl -I http://192.168.x.x:8888/api/auth/desktop-token`) fails immediately with `403 Forbidden` or connection refused.
+   - **Automated Regression Test:** Covered by `test_desktop_token_loopback_restriction` in the test suite.
 
 ---
 
@@ -143,29 +154,134 @@ docker compose up -d --build
 
 ### Option C: 🐧 Linux / Native Python Service (Bare-Metal / VPS)
 
-Run API Sentinel directly on any Linux distribution (Ubuntu/Debian, Fedora, Rocky, Alpine):
+Deploy API Sentinel as a native production service on any Linux distribution (Ubuntu/Debian, Fedora, Rocky, Alpine) using **Nginx** as the reverse proxy & static file server, and **systemd** for daemon process management.
 
+#### 1. Architecture Overview
+In native Linux production, services are split cleanly:
+- **Nginx:** Listens on port 80/443, serves the pre-built React frontend assets (`frontend/dist`) directly at blazing speed, and reverse proxies `/api/` and `/healthz` requests to the local FastAPI backend.
+- **FastAPI (Uvicorn):** Listens exclusively on local loopback `127.0.0.1:8000` (safe from direct internet exposure).
+- **Background Worker:** A standalone background daemon (`python -m backend.worker`) continuously executing scheduled health probes into SQLite.
+
+```
+       [ Client Browser / HTTPS ]
+                   │
+                   ▼
+       [ Nginx Reverse Proxy (Port 80/443) ]
+         │                              │
+         ├─ /api/* & /healthz           └─ Static SPA Assets (/)
+         ▼                                 ▼
+[ Uvicorn (127.0.0.1:8000) ]        [ /var/www/api-sentinel/frontend/dist ]
+         │
+         ▼
+[ SQLite DB (sentinel.db) ] ◄─── [ Sentinel Background Worker ]
+```
+
+#### 2. Clone & Environment Setup
 ```bash
-# 1. Clone the repository
-git clone https://github.com/akiffurkan/api-sentinel.git
-cd api-sentinel
+# Clone repository
+git clone https://github.com/akiffurkan/api-sentinel.git /var/www/api-sentinel
+cd /var/www/api-sentinel
 
-# 2. Setup Python 3.12+ virtual environment
+# Create Python 3.12+ virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
+pip install --upgrade pip
 pip install -r backend/requirements.txt
 
-# 3. Build the React frontend
-cd frontend
+# Configure production environment
+cp .env.example .env
+nano .env  # Set your ADMIN_TOKEN and optional Telegram Bot credentials
+```
+
+#### 3. Build Frontend SPA Assets
+```bash
+cd /var/www/api-sentinel/frontend
 npm install
 npm run build
-cd ..
+cd /var/www/api-sentinel
+```
+This generates optimized static production bundles in `/var/www/api-sentinel/frontend/dist`.
 
-# 4. Start the Web API server
-uvicorn backend.main:app --host 0.0.0.0 --port 8000
+#### 4. Configure Nginx Reverse Proxy
+Create `/etc/nginx/sites-available/api-sentinel`:
+```nginx
+server {
+    listen 80;
+    server_name sentinel.yourdomain.com; # Or your server's public IP
 
-# 5. In a separate process or systemd service, run the background worker:
-python -m backend.worker
+    # 1. Serve React Frontend SPA
+    root /var/www/api-sentinel/frontend/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 2. Reverse Proxy API calls to local FastAPI ASGI
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # 3. Health check probe endpoint
+    location /healthz {
+        proxy_pass http://127.0.0.1:8000/healthz;
+    }
+}
+```
+Enable the site and reload Nginx:
+```bash
+sudo ln -s /etc/nginx/sites-available/api-sentinel /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+#### 5. Configure systemd Service Daemons
+Create the API service at `/etc/systemd/system/api-sentinel.service`:
+```ini
+[Unit]
+Description=API Sentinel Web API
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/api-sentinel
+EnvironmentFile=/var/www/api-sentinel/.env
+ExecStart=/var/www/api-sentinel/.venv/bin/uvicorn backend.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Create the Worker service at `/etc/systemd/system/api-sentinel-worker.service`:
+```ini
+[Unit]
+Description=API Sentinel Monitoring Worker
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/api-sentinel
+EnvironmentFile=/var/www/api-sentinel/.env
+ExecStart=/var/www/api-sentinel/.venv/bin/python -m backend.worker
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start both daemons:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now api-sentinel api-sentinel-worker
 ```
 
 ---
@@ -191,12 +307,20 @@ python -m backend.worker
 
 ## 🧪 Automated Testing & CI Verification
 
-API Sentinel includes an automated CI/CD workflow defined in [ci/tests.yml](ci/tests.yml) that executes on every push and pull request.
+API Sentinel features a continuous integration (CI) pipeline defined in [.github/workflows/tests.yml](.github/workflows/tests.yml) running on **Ubuntu Linux runners** on every git push and pull request.
+
+The workflow executes lint checks, installs all dependencies, compiles the React frontend with Vite, and runs the complete asynchronous test suite with `pytest`:
+
+[![CI Pipeline Status](https://github.com/akiffurkan/api-sentinel/actions/workflows/tests.yml/badge.svg)](https://github.com/akiffurkan/api-sentinel/actions/workflows/tests.yml)
+
+### Real GitHub Actions Runner Output (Ubuntu 24.04 / Python 3.12)
+*(View live run: [GitHub Actions Run #42116357524](https://github.com/akiffurkan/api-sentinel/actions/runs/42116357524))*
 
 ```
-============================= test session starts =============================
-platform win32 -- Python 3.12.10, pytest-8.4.2, pluggy-1.7.0
-rootdir: D:\Projeler\API Sentinel
+============================= test session starts ==============================
+platform linux -- Python 3.12.10, pytest-8.4.2, pluggy-1.7.0 -- /opt/hostedtoolcache/Python/3.12.10/x64/bin/python
+cachedir: .pytest_cache
+rootdir: /home/runner/work/api-sentinel/api-sentinel
 configfile: pytest.ini
 testpaths: tests
 plugins: anyio-4.16.0, asyncio-0.26.0, mock-3.17.0
@@ -229,7 +353,7 @@ tests/test_ssrf.py::test_ssrf_rejects_disallowed_ports PASSED            [ 92%]
 tests/test_ssrf.py::test_ssrf_allows_valid_public_domain PASSED          [ 96%]
 tests/test_ssrf.py::test_ssrf_rejects_domain_resolving_to_private_ip PASSED [100%]
 
-======================== 26 passed, 100% success rate ========================
+============================== 26 passed in 2.68s ==============================
 ```
 
 Run tests locally:
