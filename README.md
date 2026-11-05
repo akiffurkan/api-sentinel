@@ -2,7 +2,21 @@
 
 > **Know when your API fails, before your users do.**
 
+[![Release](https://img.shields.io/github/v/release/akiffurkan/api-sentinel?color=10b981&label=Release)](https://github.com/akiffurkan/api-sentinel/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Docker-slate.svg)](#)
+
 API Sentinel is a production-minded, open-source API monitoring platform designed for developers and engineering teams. It continuously monitors HTTP and HTTPS endpoints, detects outages, measures latency and availability, and sends instant incident notifications via Telegram.
+
+---
+
+## ⚡ Direct Download (Windows Executable)
+
+You can run API Sentinel as a standalone Windows application with zero setup (no Python, Node.js, or Docker required):
+
+👉 **[Download APISentinel.exe (v1.0.0)](https://github.com/akiffurkan/api-sentinel/releases/download/v1.0.0/APISentinel.exe)** *(~23 MB, Portable)*
+
+Just double-click `APISentinel.exe` to launch the native desktop window and monitoring engine. Your configurations and historical logs are automatically persisted locally.
 
 ---
 
