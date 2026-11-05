@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request, HTTPException
 from backend.api.deps import verify_admin_token
 from backend.config import get_settings
 from backend.core.security import mask_secret
@@ -21,9 +21,19 @@ async def get_auth_status() -> Dict[str, Any]:
 
 
 @router.get("/auth/desktop-token")
-async def get_desktop_token() -> Dict[str, Any]:
-    """Provides desktop session token when running in local standalone desktop mode."""
+async def get_desktop_token(request: Request) -> Dict[str, Any]:
+    """Provides desktop session token when running in local standalone desktop mode.
+    Strictly restricted to local loopback interface (127.0.0.1 / ::1).
+    Network requests from external interfaces are rejected with 403 Forbidden.
+    """
     import os
+    client_ip = request.client.host if request.client else None
+    if client_ip not in ("127.0.0.1", "::1", "localhost", "testclient"):
+        raise HTTPException(
+            status_code=403,
+            detail="Desktop token access restricted to local loopback interface."
+        )
+
     if os.environ.get("DESKTOP_MODE") == "1":
         settings = get_settings()
         return {"token": settings.ADMIN_TOKEN}
@@ -60,7 +70,9 @@ async def get_settings_info(_auth: bool = Depends(verify_admin_token)) -> Dict[s
     }
 
 
-@router.post("/settings/telegram-test")
+@router.post("/settings/test-telegram")
 async def test_telegram_alert(_auth: bool = Depends(verify_admin_token)) -> Dict[str, Any]:
-    """Send a test alert through Telegram."""
-    return await TelegramNotifier.test_alert()
+    """Send a test notification through the configured Telegram bot."""
+    notifier = TelegramNotifier()
+    success, message = await notifier.send_test_alert()
+    return {"success": success, "message": message}

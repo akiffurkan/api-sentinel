@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 520" width="760" height="520">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0e1621"/>
+      <stop offset="100%" stop-color="#17212b"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background Telegram Window -->
+  <rect width="760" height="520" rx="16" fill="url(#bg)"/>
+  
+  <!-- Header Bar -->
+  <rect width="760" height="64" rx="16" fill="#17212b"/>
+  <rect y="48" width="760" height="16" fill="#17212b"/>
+  <line x1="0" y1="64" x2="760" y2="64" stroke="#242f3d" stroke-width="1"/>
+
+  <!-- Bot Avatar -->
+  <circle cx="44" cy="32" r="18" fill="#10b981"/>
+  <!-- Bot Icon Inside Avatar -->
+  <path d="M44 20L34 25V33C34 39.5 38.3 45.4 44 46.5C49.7 45.4 54 39.5 54 33V25L44 20Z" fill="#064e3b" stroke="#ffffff" stroke-width="1.5" transform="translate(-11, -8) scale(0.65)"/>
+
+  <!-- Header Info -->
+  <text x="76" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#ffffff">API Sentinel Bot</text>
+  <text x="76" y="46" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#10b981">bot • @SentinelAlertsBot</text>
+
+  <!-- Date Chip -->
+  <rect x="330" y="80" width="100" height="24" rx="12" fill="#242f3d" opacity="0.8"/>
+  <text x="380" y="96" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#7f91a4" text-anchor="middle" font-weight="500">TODAY</text>
+
+  <!-- Message 1: OUTAGE ALERT (Red Accents) -->
+  <g transform="translate(32, 120)" filter="url(#shadow)">
+    <!-- Bubble -->
+    <rect width="480" height="155" rx="12" fill="#182533" stroke="#ef4444" stroke-width="1.5" stroke-opacity="0.4"/>
+    
+    <!-- Title -->
+    <text x="20" y="32" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#f87171">🚨 API Sentinel Alert: Outage Detected</text>
+    
+    <!-- Details -->
+    <text x="20" y="60" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" fill="#e2e8f0">
+      <tspan fill="#94a3b8">Monitor:  </tspan><tspan font-weight="600">Production Payments Gateway</tspan>
+    </text>
+    <text x="20" y="82" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" fill="#e2e8f0">
+      <tspan fill="#94a3b8">Target:   </tspan><tspan fill="#38bdf8">https://api.stripe-gateway.prod/health</tspan>
+    </text>
+    <text x="20" y="104" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" fill="#e2e8f0">
+      <tspan fill="#94a3b8">Status:   </tspan><tspan fill="#f87171" font-weight="700">DOWN</tspan><tspan fill="#94a3b8"> (HTTP 503 Service Unavailable)</tspan>
+    </text>
+    <text x="20" y="126" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" fill="#e2e8f0">
+      <tspan fill="#94a3b8">Reason:   </tspan><tspan fill="#cbd5e1">2 consecutive failed probes</tspan>
+    </text>
+
+    <!-- Timestamp -->
+    <text x="460" y="145" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" fill="#64748b" text-anchor="end">21:14 • Delivered</text>
+  </g>
+
+  <!-- Message 2: RECOVERY ALERT (Green Accents) -->
+  <g transform="translate(32, 295)" filter="url(#shadow)">
+    <!-- Bubble -->
+    <rect width="480" height="175" rx="12" fill="#182533" stroke="#10b981" stroke-width="1.5" stroke-opacity="0.5"/>
+    
+    <!-- Title -->
+    <text x="20" y="32" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#34d399">✅ API Sentinel Alert: Incident Resolved</text>
+    
+    <!-- Details -->
+    <text x="20" y="60" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" fill="#e2e8f0">
+      <tspan fill="#94a3b8">Monitor:  </tspan><tspan font-weight="600">Production Payments Gateway</tspan>
+    </text>
+    <text x="20" y="82" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" fill="#e2e8f0">
+      <tspan fill="#94a3b8">Target:   </tspan><tspan fill="#38bdf8">https://api.stripe-gateway.prod/health</tspan>
+    </text>
+    <text x="20" y="104" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" fill="#e2e8f0">
+      <tspan fill="#94a3b8">Status:   </tspan><tspan fill="#34d399" font-weight="700">RECOVERED</tspan><tspan fill="#94a3b8"> (HTTP 200 OK • 38ms)</tspan>
+    </text>
+    <text x="20" y="126" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" fill="#e2e8f0">
+      <tspan fill="#94a3b8">Downtime: </tspan><tspan fill="#facc15" font-weight="700">4 minutes 12 seconds</tspan>
+    </text>
+    <text x="20" y="148" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" fill="#e2e8f0">
+      <tspan fill="#94a3b8">Resolved: </tspan><tspan fill="#cbd5e1">All systems operating within SLA</tspan>
+    </text>
+
+    <!-- Timestamp -->
+    <text x="460" y="165" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" fill="#64748b" text-anchor="end">21:18 • Delivered</text>
+  </g>
+</svg>

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 260" width="880" height="260">
+  <defs>
+    <linearGradient id="boxBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#1f2937"/>
+    </linearGradient>
+    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="30%" stop-color="#f59e0b"/>
+      <stop offset="60%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="880" height="260" rx="16" fill="#090d16" stroke="#1f293d" stroke-width="1.5"/>
+
+  <!-- Timeline Flow Line -->
+  <line x1="80" y1="110" x2="800" y2="110" stroke="url(#lineGrad)" stroke-width="4" stroke-dasharray="8 4"/>
+
+  <!-- Step 1: UP State -->
+  <g transform="translate(80, 50)">
+    <circle cx="0" cy="60" r="18" fill="#064e3b" stroke="#10b981" stroke-width="2"/>
+    <text x="0" y="65" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" fill="#34d399" text-anchor="middle">1</text>
+    <text x="0" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="700" fill="#34d399" text-anchor="middle">UP</text>
+    <text x="0" y="105" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">HTTP 200 OK</text>
+    <text x="0" y="122" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Latency ~35ms</text>
+  </g>
+
+  <!-- Step 2: DEGRADED (1 Failure) -->
+  <g transform="translate(280, 50)">
+    <circle cx="0" cy="60" r="18" fill="#78350f" stroke="#f59e0b" stroke-width="2"/>
+    <text x="0" y="65" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" fill="#fbbf24" text-anchor="middle">2</text>
+    <text x="0" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="700" fill="#fbbf24" text-anchor="middle">DEGRADED</text>
+    <text x="0" y="105" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#fde68a" text-anchor="middle">1st Failure</text>
+    <text x="0" y="122" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">No alarm (anti-flapping)</text>
+  </g>
+
+  <!-- Step 3: DOWN (2nd Failure -> Incident Opened) -->
+  <g transform="translate(500, 50)">
+    <circle cx="0" cy="60" r="22" fill="#7f1d1d" stroke="#ef4444" stroke-width="2.5"/>
+    <text x="0" y="65" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="800" fill="#fca5a5" text-anchor="middle">3</text>
+    <text x="0" y="18" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="800" fill="#f87171" text-anchor="middle">DOWN</text>
+    <text x="0" y="105" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="600" fill="#fca5a5" text-anchor="middle">Incident Opened</text>
+    <text x="0" y="122" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#f87171" text-anchor="middle">🚨 Telegram Alert Sent</text>
+  </g>
+
+  <!-- Step 4: RECOVERED (Success -> Incident Closed) -->
+  <g transform="translate(740, 50)">
+    <circle cx="0" cy="60" r="22" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+    <text x="0" y="65" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="800" fill="#34d399" text-anchor="middle">4</text>
+    <text x="0" y="18" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="800" fill="#34d399" text-anchor="middle">RECOVERED</text>
+    <text x="0" y="105" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="600" fill="#86efac" text-anchor="middle">Incident Resolved</text>
+    <text x="0" y="122" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#34d399" text-anchor="middle">✅ Recovery Alert Sent</text>
+  </g>
+
+  <!-- Footer Info Banner -->
+  <rect x="50" y="200" width="780" height="40" rx="8" fill="#131c2e" stroke="#1e293b"/>
+  <text x="440" y="225" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">
+    🛡️ <tspan fill="#ffffff" font-weight="600">Smart Anti-Spam Lifecycle:</tspan> Transient spikes do not spam you. Only verified consecutive failures trigger alerts.
+  </text>
+</svg>

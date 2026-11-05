@@ -9,8 +9,9 @@
 [English](README.md) • [Türkçe](README.tr.md)
 
 [![Sürüm](https://img.shields.io/github/v/release/akiffurkan/api-sentinel?color=10b981&label=S%C3%BCr%C3%BCm)](https://github.com/akiffurkan/api-sentinel/releases/latest)
-[![Testler: 25 Başarılı](https://img.shields.io/badge/Testler-25%20Ba%C5%9Far%C4%B1l%C4%B1%20(100%25)-emerald.svg)](#-otomatik-testler-ve-ci-do%C4%9Frulamas%C4%B1)
+[![Testler: 26 Başarılı](https://img.shields.io/badge/Testler-26%20Ba%C5%9Far%C4%B1l%C4%B1%20(100%25)-emerald.svg)](#-otomatik-testler-ve-ci-do%C4%9Frulamas%C4%B1)
 [![Güvenlik: SSRF Korumalı](https://img.shields.io/badge/G%C3%BCvenlik-SSRF%20Korumal%C4%B1-blue.svg)](#-kapsaml%C4%B1-ssrf-ve-a%C4%9F-g%C3%BCvenli%C4%9Fi)
+[![Masaüstü: Yalnızca Localhost](https://img.shields.io/badge/Masa%C3%BCst%C3%BC-127.0.0.1%20Loopback%20%C4%B0zole-success.svg)](#-masa%C3%BCst%C3%BC-uygulamas%C4%B1-g%C3%BCvenlik-s%C4%B1n%C4%B1r%C4%B1)
 [![Lisans: MIT](https://img.shields.io/badge/Lisans-MIT-purple.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20Docker-slate.svg)](#-kurulum-ve-%C3%A7al%C4%B1%C5%9Ft%C4%B1rma-se%C3%A7enekleri)
 
@@ -22,15 +23,49 @@ API Sentinel, geliştiriciler ve mühendislik ekipleri için tasarlanmış, aç�
 
 ---
 
-## 📸 Gerçek Dashboard Arayüzü
+## 📸 Gerçek Kullanım Kanıtları ve Canlı Telemetri
 
-Aşağıda API Sentinel'in gerçek zamanlı olarak halka açık API'leri izlediği ve anlık gecikme grafikleri ürettiği panel görüntüsü yer almaktadır:
+### 1. Canlı Dashboard ve Gecikme Takibi
+API Sentinel gerçek zamanlı çalışırken halka açık API'leri (GitHub, Cloudflare, Stripe) milisaniye hassasiyetinde yanıt süreleriyle izler:
 
 <div align="center">
 
 ![API Sentinel Panel Önizlemesi](docs/dashboard-preview.png)
 
 </div>
+
+---
+
+### 2. Kesinti ve Kurtarma Yaşam Döngüsü (Spam Önleme Kanıtı)
+API Sentinel 4 aşamalı bir durum makinesi (`UP` ➔ `DEGRADED` ➔ `DOWN` ➔ `RECOVERED`) kullanır. Tek bir geçici ağ hatası kullanıcıya bildirim spamı yapmaz. Yalnızca üst üste başarısız olan kontroller resmi kesinti açar:
+
+<div align="center">
+
+![API Sentinel Kesinti Yaşam Döngüsü](docs/incident-lifecycle.svg)
+
+</div>
+
+---
+
+### 3. Telegram Bot Bildirimleri (Canlı Kesinti ve Toparlanma Uyarısı)
+Uç nokta çöktüğünde anında kesinti uyarısı, yeniden ayağa kalktığında ise toplam kesinti süresiyle toparlanma bildirimi iletilir:
+
+<div align="center">
+
+![Telegram Bot Kesinti ve Kurtarma Bildirimleri](docs/telegram-alerts.svg)
+
+</div>
+
+---
+
+## 🔒 Masaüstü Uygulaması Güvenlik Sınırı
+
+Güvenli bir masaüstü uygulaması, kimlik doğrulaması yapılmamış yönetim API'lerini asla yerel ağa veya internete açmamalıdır. API Sentinel şu sıkı güvenlik sınırlarını uygular:
+
+1. **Yalnızca Loopback Bağlantısı (127.0.0.1):** Masaüstü modunda gömülü FastAPI ASGI sunucusu yalnızca `127.0.0.1` adresine bağlanır. Asla `0.0.0.0` veya dış ağ adaptörlerine açılmaz.
+2. **İstemci IP Adresi Kontrolü:** `/api/auth/desktop-token` uç noktası `request.client.host` bilgisini inceler. Yerel döngü (loopback) haricindeki herhangi bir IP'den gelen istek anında `403 Forbidden` ile reddedilir.
+3. **Yerel Token Saklama:** Yönetici anahtarı kullanıcının yerel Windows profilinde (`%LOCALAPPDATA%\APISentinel\admin_token.key`) işletim sistemi dosya izinleriyle korunur.
+4. **Sıfır Dış Ağ Sızıntısı:** `netstat -ano` ile doğrulandığı üzere yalnızca `127.0.0.1:<port>` dinleme (`LISTENING`) modundadır.
 
 ---
 
@@ -56,10 +91,10 @@ API Sentinel, farklı kullanım senaryoları için 3 bağımsız dağıtım yön
 
 Python, Node.js veya Docker kurmadan yerel Windows masaüstü uygulaması olarak çalıştırın:
 
-👉 **[APISentinel.exe İndir (v1.0.2)](https://github.com/akiffurkan/api-sentinel/releases/download/v1.0.2/APISentinel.exe)** *(~24 MB, Taşınabilir / Portable)*
+👉 **[APISentinel.exe İndir](https://github.com/akiffurkan/api-sentinel/releases/latest)** *(~24 MB, Taşınabilir / Portable)*
 
 - İndirip `APISentinel.exe` dosyasına çift tıklamanız yeterlidir.
-- Şifresiz otomatik masaüstü yönetici oturumu ile anında açılır.
+- Yalnızca `127.0.0.1` ile sınırlandırılmış güvenli otomatik masaüstü oturumu açılır.
 - Veritabanı ve loglar `%LOCALAPPDATA%\APISentinel` dizininde otomatik saklanır.
 
 ---
@@ -137,12 +172,7 @@ python -m backend.worker
 ## 🌟 Öne Çıkan Özellikler
 
 - **Asenkron Sağlık Kontrolleri:** `httpx` altyapısı ile engellemesiz (non-blocking) HTTP GET kontrolleri, milisaniye hassasiyetinde gecikme ölçümü ve ayarlanabilir zaman aşımları (1sn - 60sn).
-- **Akıllı Kesinti Yaşam Döngüsü:**
-  - `UP` (Çalışıyor): Beklenen HTTP durum kodunu dönen sağlıklı uç nokta.
-  - `DEGRADED` (Yavaş / Bozuk): Tek bir hata meydana geldiğinde geçici durum (anlık ağ dalgalanmalarında gereksiz alarm üretilmesini önler).
-  - `DOWN` (Çöktü / Kapalı): Üst üste iki kontrol başarısız olduğunda resmi bir kesinti (incident) açılır ve derhal Telegram uyarısı gönderilir.
-  - `RECOVERED` (Kurtarıldı): Uç nokta yeniden sağlıklı yanıt verdiğinde kesinti otomatik kapatılır, toplam kesinti süresi hesaplanır ve toparlanma bildirimi iletilir.
-  - **Spam Koruması:** Kesinti süresince aynı monitör için mükerrer olay açılması ve bildirim kirliliği engellenir.
+- **Akıllı Kesinti Yaşam Döngüsü:** `UP` ➔ `DEGRADED` ➔ `DOWN` ➔ `RECOVERED` geçişleri ile alarm kirliliği engellenir.
 - **Kapsamlı SSRF & Ağ Güvenliği:**
   - Yalnızca `http` ve `https` protokollerine izin verilir.
   - Döngü (loopback `127.0.0.0/8`, `::1`), RFC1918 özel IP blokları (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), yerel bağlantı (`169.254.0.0/16`), çok noktaya yayın (multicast), CGNAT ve bulut metaveri adresleri (`169.254.169.254`) kesinlikle engellenir.
@@ -160,7 +190,7 @@ python -m backend.worker
 
 ## 🧪 Otomatik Testler ve CI Doğrulaması
 
-API Sentinel, üretime uygunluk için kapsamlı bir birim, entegrasyon ve güvenlik test setine sahiptir:
+API Sentinel, [ci/tests.yml](ci/tests.yml) dosyasında tanımlı tam kapsamlı CI/CD test akışına sahiptir:
 
 ```
 ============================= test session starts =============================
@@ -169,26 +199,27 @@ rootdir: D:\Projeler\API Sentinel
 configfile: pytest.ini
 testpaths: tests
 plugins: anyio-4.16.0, asyncio-0.26.0, mock-3.17.0
-collected 25 items
+collected 26 items
 
-tests/test_api_monitors.py::test_auth_enforcement PASSED                 [  4%]
-tests/test_api_monitors.py::test_monitor_crud_and_ssrf PASSED            [  8%]
-tests/test_api_monitors.py::test_manual_check_now_action PASSED          [ 12%]
-tests/test_api_overview_and_incidents.py::test_healthz_endpoint PASSED   [ 16%]
-tests/test_api_overview_and_incidents.py::test_overview_and_incidents PASSED [ 20%]
-tests/test_checker.py::test_checker_success PASSED                       [ 24%]
-tests/test_checker.py::test_checker_unexpected_status_code PASSED        [ 28%]
-tests/test_checker.py::test_checker_timeout PASSED                       [ 32%]
-tests/test_checker.py::test_checker_connect_error PASSED                 [ 36%]
-tests/test_checker.py::test_checker_blocks_redirect_to_internal_ip PASSED [ 40%]
-tests/test_incident_manager.py::test_incident_lifecycle PASSED           [ 44%]
-tests/test_notifier.py::test_mask_secret PASSED                          [ 48%]
-tests/test_notifier.py::test_notifier_send_outage_alert PASSED           [ 52%]
-tests/test_notifier.py::test_notifier_send_recovery_alert PASSED         [ 56%]
-tests/test_scheduler_and_analytics.py::test_analytics_uptime_and_latency_calculations PASSED [ 60%]
-tests/test_scheduler_and_analytics.py::test_scheduler_deduplication_and_tick PASSED [ 64%]
-tests/test_ssrf.py::test_ssrf_rejects_invalid_schemes PASSED             [ 68%]
-tests/test_ssrf.py::test_ssrf_rejects_empty_or_malformed PASSED          [ 72%]
+tests/test_api_monitors.py::test_auth_enforcement PASSED                 [  3%]
+tests/test_api_monitors.py::test_monitor_crud_and_ssrf PASSED            [  7%]
+tests/test_api_monitors.py::test_manual_check_now_action PASSED          [ 11%]
+tests/test_api_overview_and_incidents.py::test_healthz_endpoint PASSED   [ 15%]
+tests/test_api_overview_and_incidents.py::test_overview_and_incidents PASSED [ 19%]
+tests/test_api_overview_and_incidents.py::test_desktop_token_loopback_restriction PASSED [ 23%]
+tests/test_checker.py::test_checker_success PASSED                       [ 26%]
+tests/test_checker.py::test_checker_unexpected_status_code PASSED        [ 30%]
+tests/test_checker.py::test_checker_timeout PASSED                       [ 34%]
+tests/test_checker.py::test_checker_connect_error PASSED                 [ 38%]
+tests/test_checker.py::test_checker_blocks_redirect_to_internal_ip PASSED [ 42%]
+tests/test_incident_manager.py::test_incident_lifecycle PASSED           [ 46%]
+tests/test_notifier.py::test_mask_secret PASSED                          [ 50%]
+tests/test_notifier.py::test_notifier_send_outage_alert PASSED           [ 53%]
+tests/test_notifier.py::test_notifier_send_recovery_alert PASSED         [ 57%]
+tests/test_scheduler_and_analytics.py::test_analytics_uptime_and_latency_calculations PASSED [ 61%]
+tests/test_scheduler_and_analytics.py::test_scheduler_deduplication_and_tick PASSED [ 65%]
+tests/test_ssrf.py::test_ssrf_rejects_invalid_schemes PASSED             [ 69%]
+tests/test_ssrf.py::test_ssrf_rejects_empty_or_malformed PASSED          [ 73%]
 tests/test_ssrf.py::test_ssrf_rejects_userinfo PASSED                    [ 76%]
 tests/test_ssrf.py::test_ssrf_rejects_loopback_and_local PASSED          [ 80%]
 tests/test_ssrf.py::test_ssrf_rejects_private_networks PASSED            [ 84%]
@@ -197,7 +228,7 @@ tests/test_ssrf.py::test_ssrf_rejects_disallowed_ports PASSED            [ 92%]
 tests/test_ssrf.py::test_ssrf_allows_valid_public_domain PASSED          [ 96%]
 tests/test_ssrf.py::test_ssrf_rejects_domain_resolving_to_private_ip PASSED [100%]
 
-======================== 25 passed, %100 başarı oranı ========================
+======================== 26 passed, %100 başarı oranı ========================
 ```
 
 Testleri yerelinizde çalıştırmak için:
@@ -214,6 +245,7 @@ pytest -v
 |---|---|---|
 | `GET` | `/healthz` | Doğrulama gerektirmeyen sistem sağlık kontrolü |
 | `GET` | `/api/auth/verify` | Oturum `ADMIN_TOKEN` doğrulaması |
+| `GET` | `/api/auth/desktop-token` | Yalnızca loopback arayüzüne açık masaüstü oturum uç noktası |
 | `GET` | `/api/overview` | Sistem genel bakışı, uptime ortalamaları ve monitör sayıları |
 | `GET` | `/api/monitors` | Kayıtlı tüm endpoint monitörlerini listeleme |
 | `POST` | `/api/monitors` | Yeni bir hedef monitör oluşturma (SSRF doğrulamalı) |

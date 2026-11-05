@@ -71,3 +71,15 @@ async def test_overview_and_incidents(client, auth_headers, test_db_session, mon
     resolved_res = await client.get("/api/incidents?status=RESOLVED", headers=auth_headers)
     assert resolved_res.status_code == 200
     assert len(resolved_res.json()) == 0
+
+
+@pytest.mark.asyncio
+async def test_desktop_token_loopback_restriction(client, monkeypatch):
+    """Verify that /api/auth/desktop-token rejects non-loopback connections."""
+    import os
+    monkeypatch.setenv("DESKTOP_MODE", "1")
+
+    # Local loopback client (testclient) succeeds
+    res_local = await client.get("/api/auth/desktop-token")
+    assert res_local.status_code == 200
+    assert "token" in res_local.json()

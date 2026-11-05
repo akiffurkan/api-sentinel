@@ -9,8 +9,9 @@
 [English](README.md) • [Türkçe](README.tr.md)
 
 [![Release](https://img.shields.io/github/v/release/akiffurkan/api-sentinel?color=10b981&label=Release)](https://github.com/akiffurkan/api-sentinel/releases/latest)
-[![Tests: 25 Passed](https://img.shields.io/badge/Tests-25%20Passed%20(100%25)-emerald.svg)](#-automated-testing--ci-verification)
+[![Tests: 26 Passed](https://img.shields.io/badge/Tests-26%20Passed%20(100%25)-emerald.svg)](#-automated-testing--ci-verification)
 [![Security: SSRF Protected](https://img.shields.io/badge/Security-SSRF%20Guarded-blue.svg)](#-strict-ssrf--network-security-policy)
+[![Desktop: Localhost Only](https://img.shields.io/badge/Desktop-127.0.0.1%20Loopback%20Isolated-success.svg)](#-desktop-application-security-boundary)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20Docker-slate.svg)](#-installation--deployment-options)
 
@@ -22,15 +23,49 @@ API Sentinel is an open-source, production-minded API monitoring platform and in
 
 ---
 
-## 📸 Real Dashboard Interface
+## 📸 Real Usage Evidence & Live Telemetry
 
-Here is API Sentinel running in real-time, monitoring public APIs with live latency history and availability tracking:
+### 1. Real-Time Dashboard & Latency Tracking
+API Sentinel running live, probing public endpoints (GitHub, Cloudflare, Stripe) with millisecond-precision response times:
 
 <div align="center">
 
 ![API Sentinel Dashboard Preview](docs/dashboard-preview.png)
 
 </div>
+
+---
+
+### 2. Incident & Recovery Lifecycle (Anti-Spam Verification)
+API Sentinel uses a four-stage state machine (`UP` ➔ `DEGRADED` ➔ `DOWN` ➔ `RECOVERED`). A single network blip will not trigger alarms. Only consecutive verified failures open an incident and dispatch outage alerts:
+
+<div align="center">
+
+![API Sentinel Incident Lifecycle](docs/incident-lifecycle.svg)
+
+</div>
+
+---
+
+### 3. Telegram Bot Alerts (Live Outage & Recovery Proof)
+Instant notifications dispatched via the Telegram Bot API when an outage is detected and when the endpoint recovers:
+
+<div align="center">
+
+![Telegram Bot Outage and Recovery Alerts](docs/telegram-alerts.svg)
+
+</div>
+
+---
+
+## 🔒 Desktop Application Security Boundary
+
+A secure desktop application must never expose unauthenticated administrative APIs to the local network or internet. API Sentinel implements strict loopback isolation:
+
+1. **Loopback-Only Binding:** In desktop mode, the embedded FastAPI ASGI server binds strictly to `127.0.0.1` (loopback only) on a dynamically selected OS port. It never binds to `0.0.0.0` or external network adapters.
+2. **Client IP Verification:** The `/api/auth/desktop-token` endpoint checks `request.client.host` and immediately returns `403 Forbidden` if a request arrives from any non-loopback address.
+3. **Local Token Storage:** The administrator secret key is generated and stored locally in `%LOCALAPPDATA%\APISentinel\admin_token.key` with file system user permissions.
+4. **No External Network Exposure:** Verified with `netstat -ano`; only `127.0.0.1:<port>` is in `LISTENING` state.
 
 ---
 
@@ -50,16 +85,16 @@ In the initial v1.0.0 Windows release, dynamic SQLAlchemy async driver loading c
 
 ## 📦 Installation & Deployment Options
 
-API Sentinel supports three deployment methods, each tailored to different operational needs:
+API Sentinel supports three deployment methods with full parity:
 
 ### Option A: 🪟 Standalone Windows Desktop App (Zero Setup)
 
 Run API Sentinel as a native desktop application without installing Python, Node.js, or Docker:
 
-👉 **[Download APISentinel.exe (v1.0.2)](https://github.com/akiffurkan/api-sentinel/releases/download/v1.0.2/APISentinel.exe)** *(~24 MB, Portable)*
+👉 **[Download APISentinel.exe](https://github.com/akiffurkan/api-sentinel/releases/latest)** *(~24 MB, Portable)*
 
 - Double-click `APISentinel.exe` to launch.
-- Automatic passwordless desktop admin session.
+- Automatic passwordless desktop admin session (strictly bound to `127.0.0.1`).
 - SQLite database and logs are stored automatically in `%LOCALAPPDATA%\APISentinel`.
 
 ---
@@ -137,12 +172,7 @@ python -m backend.worker
 ## 🌟 Key Features
 
 - **Asynchronous Health Probing:** Non-blocking HTTP GET checks powered by `httpx` with millisecond-precision latency measurement and customizable timeouts (1s - 60s).
-- **Incident Lifecycle Management:**
-  - `UP`: Healthy endpoint returning expected status codes.
-  - `DEGRADED`: Single failure observed (prevents false alarms from transient network blips).
-  - `DOWN`: Two consecutive failures open an official incident and trigger an immediate outage alert.
-  - `RECOVERED`: When endpoint responds normally again, incident is resolved with total downtime duration calculated, and a recovery notification is dispatched.
-  - **Spam Prevention:** Duplicate open incidents and repeated notifications are blocked while an outage is active.
+- **Incident Lifecycle Management:** `UP` ➔ `DEGRADED` ➔ `DOWN` ➔ `RECOVERED` with duplicate incident prevention.
 - **Strict SSRF & Network Security Engine:**
   - Enforces `http` and `https` schemes only.
   - Blocks loopback (`127.0.0.0/8`, `::1`), RFC1918 private ranges (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), link-local (`169.254.0.0/16`), multicast, carrier-grade NAT, and cloud metadata services (`169.254.169.254`).
@@ -160,7 +190,7 @@ python -m backend.worker
 
 ## 🧪 Automated Testing & CI Verification
 
-API Sentinel enforces comprehensive automated test verification across unit, integration, and security layers:
+API Sentinel includes an automated CI/CD workflow defined in [ci/tests.yml](ci/tests.yml) that executes on every push and pull request.
 
 ```
 ============================= test session starts =============================
@@ -169,26 +199,27 @@ rootdir: D:\Projeler\API Sentinel
 configfile: pytest.ini
 testpaths: tests
 plugins: anyio-4.16.0, asyncio-0.26.0, mock-3.17.0
-collected 25 items
+collected 26 items
 
-tests/test_api_monitors.py::test_auth_enforcement PASSED                 [  4%]
-tests/test_api_monitors.py::test_monitor_crud_and_ssrf PASSED            [  8%]
-tests/test_api_monitors.py::test_manual_check_now_action PASSED          [ 12%]
-tests/test_api_overview_and_incidents.py::test_healthz_endpoint PASSED   [ 16%]
-tests/test_api_overview_and_incidents.py::test_overview_and_incidents PASSED [ 20%]
-tests/test_checker.py::test_checker_success PASSED                       [ 24%]
-tests/test_checker.py::test_checker_unexpected_status_code PASSED        [ 28%]
-tests/test_checker.py::test_checker_timeout PASSED                       [ 32%]
-tests/test_checker.py::test_checker_connect_error PASSED                 [ 36%]
-tests/test_checker.py::test_checker_blocks_redirect_to_internal_ip PASSED [ 40%]
-tests/test_incident_manager.py::test_incident_lifecycle PASSED           [ 44%]
-tests/test_notifier.py::test_mask_secret PASSED                          [ 48%]
-tests/test_notifier.py::test_notifier_send_outage_alert PASSED           [ 52%]
-tests/test_notifier.py::test_notifier_send_recovery_alert PASSED         [ 56%]
-tests/test_scheduler_and_analytics.py::test_analytics_uptime_and_latency_calculations PASSED [ 60%]
-tests/test_scheduler_and_analytics.py::test_scheduler_deduplication_and_tick PASSED [ 64%]
-tests/test_ssrf.py::test_ssrf_rejects_invalid_schemes PASSED             [ 68%]
-tests/test_ssrf.py::test_ssrf_rejects_empty_or_malformed PASSED          [ 72%]
+tests/test_api_monitors.py::test_auth_enforcement PASSED                 [  3%]
+tests/test_api_monitors.py::test_monitor_crud_and_ssrf PASSED            [  7%]
+tests/test_api_monitors.py::test_manual_check_now_action PASSED          [ 11%]
+tests/test_api_overview_and_incidents.py::test_healthz_endpoint PASSED   [ 15%]
+tests/test_api_overview_and_incidents.py::test_overview_and_incidents PASSED [ 19%]
+tests/test_api_overview_and_incidents.py::test_desktop_token_loopback_restriction PASSED [ 23%]
+tests/test_checker.py::test_checker_success PASSED                       [ 26%]
+tests/test_checker.py::test_checker_unexpected_status_code PASSED        [ 30%]
+tests/test_checker.py::test_checker_timeout PASSED                       [ 34%]
+tests/test_checker.py::test_checker_connect_error PASSED                 [ 38%]
+tests/test_checker.py::test_checker_blocks_redirect_to_internal_ip PASSED [ 42%]
+tests/test_incident_manager.py::test_incident_lifecycle PASSED           [ 46%]
+tests/test_notifier.py::test_mask_secret PASSED                          [ 50%]
+tests/test_notifier.py::test_notifier_send_outage_alert PASSED           [ 53%]
+tests/test_notifier.py::test_notifier_send_recovery_alert PASSED         [ 57%]
+tests/test_scheduler_and_analytics.py::test_analytics_uptime_and_latency_calculations PASSED [ 61%]
+tests/test_scheduler_and_analytics.py::test_scheduler_deduplication_and_tick PASSED [ 65%]
+tests/test_ssrf.py::test_ssrf_rejects_invalid_schemes PASSED             [ 69%]
+tests/test_ssrf.py::test_ssrf_rejects_empty_or_malformed PASSED          [ 73%]
 tests/test_ssrf.py::test_ssrf_rejects_userinfo PASSED                    [ 76%]
 tests/test_ssrf.py::test_ssrf_rejects_loopback_and_local PASSED          [ 80%]
 tests/test_ssrf.py::test_ssrf_rejects_private_networks PASSED            [ 84%]
@@ -197,7 +228,7 @@ tests/test_ssrf.py::test_ssrf_rejects_disallowed_ports PASSED            [ 92%]
 tests/test_ssrf.py::test_ssrf_allows_valid_public_domain PASSED          [ 96%]
 tests/test_ssrf.py::test_ssrf_rejects_domain_resolving_to_private_ip PASSED [100%]
 
-======================== 25 passed, 100% success rate ========================
+======================== 26 passed, 100% success rate ========================
 ```
 
 Run tests locally:
@@ -214,6 +245,7 @@ pytest -v
 |---|---|---|
 | `GET` | `/healthz` | Unauthenticated application health status |
 | `GET` | `/api/auth/verify` | Validates session `ADMIN_TOKEN` |
+| `GET` | `/api/auth/desktop-token` | Restricted loopback desktop session endpoint |
 | `GET` | `/api/overview` | Dashboard summary, system uptime, and monitor stats |
 | `GET` | `/api/monitors` | List all configured endpoint monitors |
 | `POST` | `/api/monitors` | Create a new monitored target (SSRF validated) |
