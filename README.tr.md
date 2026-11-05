@@ -9,6 +9,7 @@
 [English](README.md) • [Türkçe](README.tr.md)
 
 [![Sürüm](https://img.shields.io/github/v/release/akiffurkan/api-sentinel?color=10b981&label=S%C3%BCr%C3%BCm)](https://github.com/akiffurkan/api-sentinel/releases/latest)
+[![CI Hattı](https://github.com/akiffurkan/api-sentinel/actions/workflows/tests.yml/badge.svg)](https://github.com/akiffurkan/api-sentinel/actions/workflows/tests.yml)
 [![Testler: 26 Başarılı](https://img.shields.io/badge/Testler-26%20Ba%C5%9Far%C4%B1l%C4%B1%20(100%25)-emerald.svg)](#-otomatik-testler-ve-ci-do%C4%9Frulamas%C4%B1)
 [![Güvenlik: SSRF Korumalı](https://img.shields.io/badge/G%C3%BCvenlik-SSRF%20Korumal%C4%B1-blue.svg)](#-kapsaml%C4%B1-ssrf-ve-a%C4%9F-g%C3%BCvenli%C4%9Fi)
 [![Masaüstü: Yalnızca Localhost](https://img.shields.io/badge/Masa%C3%BCst%C3%BC-127.0.0.1%20Loopback%20%C4%B0zole-success.svg)](#-masa%C3%BCst%C3%BC-uygulamas%C4%B1-g%C3%BCvenlik-s%C4%B1n%C4%B1r%C4%B1)

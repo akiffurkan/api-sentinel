@@ -9,6 +9,7 @@
 [English](README.md) • [Türkçe](README.tr.md)
 
 [![Release](https://img.shields.io/github/v/release/akiffurkan/api-sentinel?color=10b981&label=Release)](https://github.com/akiffurkan/api-sentinel/releases/latest)
+[![CI Pipeline](https://github.com/akiffurkan/api-sentinel/actions/workflows/tests.yml/badge.svg)](https://github.com/akiffurkan/api-sentinel/actions/workflows/tests.yml)
 [![Tests: 26 Passed](https://img.shields.io/badge/Tests-26%20Passed%20(100%25)-emerald.svg)](#-automated-testing--ci-verification)
 [![Security: SSRF Protected](https://img.shields.io/badge/Security-SSRF%20Guarded-blue.svg)](#-strict-ssrf--network-security-policy)
 [![Desktop: Localhost Only](https://img.shields.io/badge/Desktop-127.0.0.1%20Loopback%20Isolated-success.svg)](#-desktop-application-security-boundary)
