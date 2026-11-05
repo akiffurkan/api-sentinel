@@ -1,0 +1,68 @@
+services:
+  # FastAPI Web API Service
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: apisentinel-api
+    restart: unless-stopped
+    command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/sentinel.db
+      - ADMIN_TOKEN=${ADMIN_TOKEN}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - DEFAULT_INTERVAL=${DEFAULT_INTERVAL:-60}
+      - DEFAULT_TIMEOUT=${DEFAULT_TIMEOUT:-10}
+      - MAX_CONCURRENT_CHECKS=${MAX_CONCURRENT_CHECKS:-20}
+    volumes:
+      - sentinel-data:/app/data
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # Background Monitoring Worker Service
+  worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: apisentinel-worker
+    restart: unless-stopped
+    command: ["python", "-m", "backend.worker"]
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/sentinel.db
+      - ADMIN_TOKEN=${ADMIN_TOKEN}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - DEFAULT_INTERVAL=${DEFAULT_INTERVAL:-60}
+      - DEFAULT_TIMEOUT=${DEFAULT_TIMEOUT:-10}
+      - MAX_CONCURRENT_CHECKS=${MAX_CONCURRENT_CHECKS:-20}
+    volumes:
+      - sentinel-data:/app/data
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # React Frontend Dashboard Service (Nginx)
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: apisentinel-web
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  sentinel-data:
+    name: apisentinel-data
