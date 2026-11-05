@@ -18,6 +18,7 @@ import { MetricCard } from '../components/MetricCard';
 import { LatencyChart } from '../components/LatencyChart';
 import { EditMonitorModal } from '../components/EditMonitorModal';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { useLanguage } from '../i18n/LanguageContext';
 import { api } from '../services/api';
 
 interface MonitorDetailPageProps {
@@ -31,6 +32,7 @@ export const MonitorDetailPage: React.FC<MonitorDetailPageProps> = ({
   onBack,
   onMonitorDeleted,
 }) => {
+  const { t } = useLanguage();
   const [monitor, setMonitor] = useState<MonitorDetail | null>(null);
   const [checks, setChecks] = useState<CheckResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,7 +88,7 @@ export const MonitorDetailPage: React.FC<MonitorDetailPageProps> = ({
       <div className="flex h-96 items-center justify-center">
         <div className="flex items-center gap-3 text-sm text-slate-400">
           <RefreshCw className="h-5 w-5 animate-spin text-emerald-400" />
-          Loading monitor details...
+          {t.common.loading}
         </div>
       </div>
     );
@@ -95,12 +97,12 @@ export const MonitorDetailPage: React.FC<MonitorDetailPageProps> = ({
   if (!monitor) {
     return (
       <div className="p-8 text-center">
-        <p className="text-sm text-slate-400">Monitor not found or deleted.</p>
+        <p className="text-sm text-slate-400">{t.common.error}</p>
         <button
           onClick={onBack}
           className="mt-4 rounded-lg bg-surface-100 px-4 py-2 text-xs text-white hover:bg-surface-50"
         >
-          Back to monitors
+          {t.detail.back}
         </button>
       </div>
     );
@@ -147,7 +149,7 @@ export const MonitorDetailPage: React.FC<MonitorDetailPageProps> = ({
             className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-100 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-surface-50 hover:text-white disabled:opacity-50 transition-colors"
           >
             <Play className={`h-3.5 w-3.5 ${isCheckingNow ? 'animate-spin' : ''}`} />
-            Check Now
+            {t.monitors.checkNow}
           </button>
 
           <button
@@ -155,7 +157,7 @@ export const MonitorDetailPage: React.FC<MonitorDetailPageProps> = ({
             className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-100 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-surface-50 hover:text-white transition-colors"
           >
             <Edit2 className="h-3.5 w-3.5" />
-            Edit
+            {t.monitors.edit}
           </button>
 
           <button
@@ -163,7 +165,7 @@ export const MonitorDetailPage: React.FC<MonitorDetailPageProps> = ({
             className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-100 px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            Delete
+            {t.monitors.delete}
           </button>
         </div>
       </div>
@@ -178,14 +180,14 @@ export const MonitorDetailPage: React.FC<MonitorDetailPageProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="rounded bg-red-500/20 px-1.5 py-0.5 text-[10px] font-mono font-bold text-red-400 uppercase">
-                  OPEN INCIDENT
+                  {t.incidents.badgeOpen}
                 </span>
                 <span className="text-xs text-slate-400">
-                  Started {new Date(monitor.active_incident.started_at).toLocaleString()}
+                  {t.incidents.started} {new Date(monitor.active_incident.started_at).toLocaleString()}
                 </span>
               </div>
               <p className="mt-1 text-sm font-semibold text-white">
-                Outage Reason: {monitor.active_incident.reason}
+                {t.incidents.reason}: {monitor.active_incident.reason}
               </p>
             </div>
           </div>
@@ -195,37 +197,37 @@ export const MonitorDetailPage: React.FC<MonitorDetailPageProps> = ({
       {/* Metrics Row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          title="24h Estimated Availability"
+          title={t.detail.uptime24h}
           value={monitor.uptime_percentage !== null ? `${monitor.uptime_percentage.toFixed(2)}%` : '100%'}
-          subtitle="Check-based estimated availability"
+          subtitle={t.metrics.availabilitySubtitle}
           icon={<Clock className="h-4 w-4" />}
         />
 
         <MetricCard
-          title="Average Latency"
+          title={t.metrics.averageLatency}
           value={monitor.average_latency_ms !== null ? `${Math.round(monitor.average_latency_ms)} ms` : '--'}
           subtitle={`Min: ${monitor.min_latency_ms || 0}ms · Max: ${monitor.max_latency_ms || 0}ms`}
           icon={<Zap className="h-4 w-4" />}
         />
 
         <MetricCard
-          title="p95 Latency"
+          title={t.detail.p95Latency}
           value={monitor.p95_latency_ms !== null ? `${Math.round(monitor.p95_latency_ms)} ms` : '--'}
-          subtitle="95th percentile response time"
+          subtitle={t.detail.p95Subtitle}
           icon={<Zap className="h-4 w-4" />}
         />
 
         <MetricCard
-          title="Total Recorded Checks"
+          title={t.detail.totalChecks}
           value={monitor.total_checks_count}
-          subtitle={`Checking every ${monitor.interval_seconds}s`}
+          subtitle={`${t.monitors.colInterval}: ${monitor.interval_seconds}s`}
           icon={<Layers className="h-4 w-4" />}
         />
       </div>
 
       {/* Latency History Chart */}
       <div className="rounded-xl border border-border bg-surface-100/40 p-5">
-        <h3 className="text-sm font-semibold text-white mb-4">Response Time History</h3>
+        <h3 className="text-sm font-semibold text-white mb-4">{t.detail.responseTimeHistory}</h3>
         <LatencyChart checks={checks} height={260} />
       </div>
 
@@ -235,7 +237,7 @@ export const MonitorDetailPage: React.FC<MonitorDetailPageProps> = ({
         <div className="rounded-xl border border-border bg-surface-100/40 p-5">
           <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
             <ShieldAlert className="h-4 w-4 text-slate-400" />
-            Incident Timeline
+            {t.detail.incidentTimeline}
           </h3>
 
           {monitor.recent_incidents && monitor.recent_incidents.length > 0 ? (
@@ -251,25 +253,25 @@ export const MonitorDetailPage: React.FC<MonitorDetailPageProps> = ({
                         inc.status === 'OPEN' ? 'text-red-400' : 'text-emerald-400'
                       }`}
                     >
-                      {inc.status}
+                      {inc.status === 'OPEN' ? t.incidents.badgeOpen : t.incidents.badgeResolved}
                     </span>
                     <span className="text-[11px] text-slate-500 font-mono">
                       {inc.duration_seconds
-                        ? `Duration: ${Math.round(inc.duration_seconds)}s`
-                        : 'Ongoing Outage'}
+                        ? `${t.incidents.duration}: ${Math.round(inc.duration_seconds)}s`
+                        : t.incidents.ongoingOutage}
                     </span>
                   </div>
                   <div className="mt-1 text-slate-300">{inc.reason}</div>
                   <div className="mt-1 text-[11px] text-slate-500">
-                    Started: {new Date(inc.started_at).toLocaleString()}
-                    {inc.resolved_at && ` · Resolved: ${new Date(inc.resolved_at).toLocaleString()}`}
+                    {t.incidents.started}: {new Date(inc.started_at).toLocaleString()}
+                    {inc.resolved_at && ` · ${t.incidents.resolved}: ${new Date(inc.resolved_at).toLocaleString()}`}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="p-8 text-center text-xs text-slate-500">
-              No incident history recorded for this monitor.
+              {t.detail.noIncidentsRecorded}
             </div>
           )}
         </div>
@@ -278,7 +280,7 @@ export const MonitorDetailPage: React.FC<MonitorDetailPageProps> = ({
         <div className="rounded-xl border border-border bg-surface-100/40 p-5">
           <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
             <History className="h-4 w-4 text-slate-400" />
-            Recent Probes Log
+            {t.detail.recentProbes}
           </h3>
 
           {checks.length > 0 ? (
@@ -292,7 +294,7 @@ export const MonitorDetailPage: React.FC<MonitorDetailPageProps> = ({
                       }`}
                     />
                     <span className="font-mono text-slate-300">
-                      {c.status_code ? `HTTP ${c.status_code}` : 'Error'}
+                      {c.status_code ? `HTTP ${c.status_code}` : t.common.error}
                     </span>
                     {c.error_message && (
                       <span className="text-red-400 text-[11px] truncate max-w-xs">
@@ -309,7 +311,7 @@ export const MonitorDetailPage: React.FC<MonitorDetailPageProps> = ({
             </div>
           ) : (
             <div className="p-8 text-center text-xs text-slate-500">
-              No check logs available.
+              {t.detail.noChecks}
             </div>
           )}
         </div>
@@ -329,9 +331,9 @@ export const MonitorDetailPage: React.FC<MonitorDetailPageProps> = ({
       {isDeleteOpen && (
         <ConfirmationModal
           isOpen={true}
-          title={`Delete "${monitor.name}"?`}
-          message="Are you sure you want to delete this monitor? All check history and incidents will be erased."
-          confirmLabel="Delete Monitor"
+          title={`${t.monitors.delete} "${monitor.name}"?`}
+          message={t.monitors.deleteConfirm}
+          confirmLabel={t.monitors.delete}
           isProcessing={isDeleting}
           onConfirm={handleDeleteConfirm}
           onCancel={() => setIsDeleteOpen(false)}

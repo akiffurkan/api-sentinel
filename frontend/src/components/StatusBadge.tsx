@@ -1,5 +1,6 @@
 import React from 'react';
 import { MonitorStatus } from '../types';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface StatusBadgeProps {
   status: MonitorStatus | 'PAUSED';
@@ -12,47 +13,52 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   size = 'md',
   showPulse = true,
 }) => {
+  const { t } = useLanguage();
+
+  const labels: Record<MonitorStatus | 'PAUSED', string> = {
+    UP: t.status.operational,
+    DEGRADED: t.status.degraded,
+    DOWN: t.status.down,
+    RECOVERED: t.status.recovered,
+    PENDING: t.status.pending,
+    PAUSED: t.status.paused,
+  };
+
   const configs: Record<
     MonitorStatus | 'PAUSED',
-    { label: string; bg: string; text: string; dot: string; pulse: string }
+    { bg: string; text: string; dot: string; pulse: string }
   > = {
     UP: {
-      label: 'Operational',
       bg: 'bg-emerald-500/10 border-emerald-500/30',
       text: 'text-emerald-400',
       dot: 'bg-emerald-400',
       pulse: 'bg-emerald-400/40',
     },
     DEGRADED: {
-      label: 'Degraded',
       bg: 'bg-amber-500/10 border-amber-500/30',
       text: 'text-amber-400',
       dot: 'bg-amber-400',
       pulse: 'bg-amber-400/40',
     },
     DOWN: {
-      label: 'Down',
       bg: 'bg-red-500/10 border-red-500/30',
       text: 'text-red-400',
       dot: 'bg-red-400',
       pulse: 'bg-red-400/40',
     },
     RECOVERED: {
-      label: 'Recovered',
       bg: 'bg-cyan-500/10 border-cyan-500/30',
       text: 'text-cyan-400',
       dot: 'bg-cyan-400',
       pulse: 'bg-cyan-400/40',
     },
     PENDING: {
-      label: 'Pending Check',
       bg: 'bg-slate-500/10 border-slate-500/30',
       text: 'text-slate-400',
       dot: 'bg-slate-400',
       pulse: 'bg-slate-400/40',
     },
     PAUSED: {
-      label: 'Paused',
       bg: 'bg-zinc-800/60 border-zinc-700/50',
       text: 'text-zinc-400',
       dot: 'bg-zinc-500',
@@ -60,7 +66,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     },
   };
 
-  const current = configs[status] || configs.PENDING;
+  const currentConfig = configs[status] || configs.PENDING;
+  const label = labels[status] || labels.PENDING;
 
   const sizeClasses = {
     sm: 'px-2 py-0.5 text-xs',
@@ -76,17 +83,17 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border font-medium tracking-wide ${current.bg} ${current.text} ${sizeClasses}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border font-medium tracking-wide ${currentConfig.bg} ${currentConfig.text} ${sizeClasses}`}
     >
       <span className="relative flex items-center justify-center">
         {showPulse && status !== 'PAUSED' && status !== 'PENDING' && (
           <span
-            className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${current.pulse}`}
+            className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${currentConfig.pulse}`}
           />
         )}
-        <span className={`relative inline-flex rounded-full ${current.dot} ${dotSize}`} />
+        <span className={`relative inline-flex rounded-full ${currentConfig.dot} ${dotSize}`} />
       </span>
-      <span>{current.label}</span>
+      <span>{label}</span>
     </span>
   );
 };

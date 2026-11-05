@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -16,12 +17,14 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   isOpen,
   title,
   message,
-  confirmLabel = 'Delete',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   onConfirm,
   onCancel,
   isProcessing = false,
 }) => {
+  const { t } = useLanguage();
+
   if (!isOpen) return null;
 
   return (
@@ -47,7 +50,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             disabled={isProcessing}
             className="rounded-lg border border-border bg-surface-100 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-surface-50 hover:text-white transition-colors"
           >
-            {cancelLabel}
+            {cancelLabel || t.common.cancel}
           </button>
           <button
             type="button"
@@ -55,7 +58,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             disabled={isProcessing}
             className="rounded-lg bg-red-600 px-4 py-2 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50 transition-colors shadow-sm shadow-red-950/40"
           >
-            {isProcessing ? 'Processing...' : confirmLabel}
+            {isProcessing ? t.common.saving : (confirmLabel || t.common.delete)}
           </button>
         </div>
       </div>

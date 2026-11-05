@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, ShieldAlert, Plus, Check } from 'lucide-react';
+import { X, ShieldAlert, Plus } from 'lucide-react';
 import { CreateMonitorInput } from '../types';
 import { api, ApiError } from '../services/api';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface AddMonitorModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ export const AddMonitorModal: React.FC<AddMonitorModalProps> = ({
   onClose,
   onMonitorCreated,
 }) => {
+  const { t } = useLanguage();
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
   const [interval, setInterval] = useState(60);
@@ -35,12 +37,12 @@ export const AddMonitorModal: React.FC<AddMonitorModalProps> = ({
       .filter((n) => !isNaN(n));
 
     if (codes.length === 0) {
-      setError('Please provide at least one valid expected HTTP status code (e.g., 200).');
+      setError(t.modals.statusCodesError);
       return;
     }
 
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      setError('URL must start with http:// or https://');
+      setError(t.modals.urlError);
       return;
     }
 
@@ -84,9 +86,9 @@ export const AddMonitorModal: React.FC<AddMonitorModalProps> = ({
       >
         <div className="flex items-center justify-between border-b border-border pb-4">
           <div>
-            <h3 className="text-lg font-semibold text-white">Create Endpoint Monitor</h3>
+            <h3 className="text-lg font-semibold text-white">{t.modals.addTitle}</h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Add a target HTTP/HTTPS API endpoint for real-time uptime checks.
+              {t.modals.addSubtitle}
             </p>
           </div>
           <button
@@ -106,7 +108,7 @@ export const AddMonitorModal: React.FC<AddMonitorModalProps> = ({
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-300">Monitor Name</label>
+            <label className="block text-xs font-medium text-slate-300">{t.modals.monitorName}</label>
             <input
               type="text"
               required
@@ -118,7 +120,7 @@ export const AddMonitorModal: React.FC<AddMonitorModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300">Target URL (HTTP / HTTPS)</label>
+            <label className="block text-xs font-medium text-slate-300">{t.modals.targetUrl}</label>
             <input
               type="url"
               required
@@ -128,45 +130,45 @@ export const AddMonitorModal: React.FC<AddMonitorModalProps> = ({
               className="mt-1.5 w-full rounded-lg border border-border bg-surface-100 px-3 py-2 text-sm text-white font-mono placeholder-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
             <p className="mt-1 text-[11px] text-slate-500">
-              Validated against SSRF rules: loopback, local network, and metadata IPs are rejected.
+              {t.modals.ssrfNote}
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-300">Check Interval</label>
+              <label className="block text-xs font-medium text-slate-300">{t.modals.checkInterval}</label>
               <select
                 value={interval}
                 onChange={(e) => setInterval(Number(e.target.value))}
                 className="mt-1.5 w-full rounded-lg border border-border bg-surface-100 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               >
-                <option value={15}>Every 15 seconds</option>
-                <option value={30}>Every 30 seconds</option>
-                <option value={60}>Every 1 minute</option>
-                <option value={120}>Every 2 minutes</option>
-                <option value={300}>Every 5 minutes</option>
-                <option value={600}>Every 10 minutes</option>
+                <option value={15}>15s</option>
+                <option value={30}>30s</option>
+                <option value={60}>60s (1m)</option>
+                <option value={120}>120s (2m)</option>
+                <option value={300}>300s (5m)</option>
+                <option value={600}>600s (10m)</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300">Timeout</label>
+              <label className="block text-xs font-medium text-slate-300">{t.modals.timeoutSeconds}</label>
               <select
                 value={timeout}
                 onChange={(e) => setTimeout(Number(e.target.value))}
                 className="mt-1.5 w-full rounded-lg border border-border bg-surface-100 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               >
-                <option value={3}>3 seconds</option>
-                <option value={5}>5 seconds</option>
-                <option value={10}>10 seconds</option>
-                <option value={15}>15 seconds</option>
-                <option value={30}>30 seconds</option>
+                <option value={3}>3s</option>
+                <option value={5}>5s</option>
+                <option value={10}>10s</option>
+                <option value={15}>15s</option>
+                <option value={30}>30s</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300">Expected HTTP Status Codes</label>
+            <label className="block text-xs font-medium text-slate-300">{t.modals.expectedStatusCodes}</label>
             <input
               type="text"
               required
@@ -175,7 +177,7 @@ export const AddMonitorModal: React.FC<AddMonitorModalProps> = ({
               placeholder="200, 204"
               className="mt-1.5 w-full rounded-lg border border-border bg-surface-100 px-3 py-2 text-sm text-white font-mono placeholder-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
-            <p className="mt-1 text-[11px] text-slate-500">Comma-separated HTTP status codes considered healthy.</p>
+            <p className="mt-1 text-[11px] text-slate-500">{t.modals.expectedCodesNote}</p>
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
@@ -185,7 +187,7 @@ export const AddMonitorModal: React.FC<AddMonitorModalProps> = ({
               disabled={isSubmitting}
               className="rounded-lg border border-border bg-surface-100 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-surface-50 hover:text-white transition-colors"
             >
-              Cancel
+              {t.common.cancel}
             </button>
             <button
               type="submit"
@@ -193,7 +195,7 @@ export const AddMonitorModal: React.FC<AddMonitorModalProps> = ({
               className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50 transition-colors shadow-sm shadow-emerald-950/40"
             >
               <Plus className="h-4 w-4" />
-              {isSubmitting ? 'Creating...' : 'Create Monitor'}
+              {isSubmitting ? t.common.saving : t.modals.createBtn}
             </button>
           </div>
         </form>

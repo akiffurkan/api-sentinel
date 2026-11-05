@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
 import { Navbar } from './components/Navbar';
 import { OverviewPage } from './pages/OverviewPage';
 import { MonitorsPage } from './pages/MonitorsPage';
@@ -15,6 +16,7 @@ type Tab = 'overview' | 'monitors' | 'incidents' | 'settings';
 
 const DashboardContent: React.FC = () => {
   const { isAuthenticated, isAuthRequired, isLoading: isAuthLoading } = useAuth();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [selectedMonitorId, setSelectedMonitorId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -140,9 +142,11 @@ const DashboardContent: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <DashboardContent />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <DashboardContent />
+      </AuthProvider>
+    </LanguageProvider>
   );
 };
 

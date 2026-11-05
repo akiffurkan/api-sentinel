@@ -14,6 +14,7 @@ import {
 import { OverviewData } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
 import { MetricCard } from '../components/MetricCard';
+import { useLanguage } from '../i18n/LanguageContext';
 import { api } from '../services/api';
 
 interface OverviewPageProps {
@@ -35,6 +36,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
   onNavigateToIncidents,
   onOpenAddModal,
 }) => {
+  const { t } = useLanguage();
   const [checkingId, setCheckingId] = useState<string | null>(null);
 
   const handleCheckNow = async (id: string, e: React.MouseEvent) => {
@@ -55,7 +57,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
       <div className="flex h-96 items-center justify-center">
         <div className="flex items-center gap-3 text-sm text-slate-400">
           <RefreshCw className="h-5 w-5 animate-spin text-emerald-400" />
-          Loading system overview...
+          {t.common.loading}
         </div>
       </div>
     );
@@ -84,10 +86,10 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             </div>
             <div>
               <h4 className="text-sm font-semibold text-white">
-                Active Outage Detected ({data?.open_incidents_count} Open Incident{data?.open_incidents_count === 1 ? '' : 's'})
+                {t.metrics.outageDetected(data?.open_incidents_count || 1)}
               </h4>
               <p className="text-xs text-red-300 mt-0.5">
-                One or more monitored endpoints have failed consecutive health checks.
+                {t.metrics.outageDescription}
               </p>
             </div>
           </div>
@@ -95,7 +97,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             onClick={onNavigateToIncidents}
             className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-red-500 transition-colors shadow-sm"
           >
-            Investigate Incidents
+            {t.metrics.investigate}
             <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -104,30 +106,30 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
       {/* Metrics Row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          title="Monitored Endpoints"
+          title={t.metrics.monitoredEndpoints}
           value={counts.total}
-          subtitle={`${counts.up} operational, ${counts.down} down, ${counts.paused} paused`}
+          subtitle={t.metrics.monitoredSubtitle(counts.up, counts.down, counts.paused)}
           icon={<Layers className="h-4 w-4" />}
         />
 
         <MetricCard
-          title="Estimated Availability"
+          title={t.metrics.estimatedAvailability}
           value={data?.overall_uptime_percentage ? `${data.overall_uptime_percentage.toFixed(2)}%` : '100%'}
-          subtitle={data?.uptime_calculation_note || 'Check-based estimated uptime'}
+          subtitle={data?.uptime_calculation_note || t.metrics.availabilitySubtitle}
           icon={<ShieldCheck className="h-4 w-4" />}
         />
 
         <MetricCard
-          title="Average Latency"
+          title={t.metrics.averageLatency}
           value={data?.average_latency_ms ? `${Math.round(data.average_latency_ms)} ms` : '--'}
-          subtitle="Across active endpoint probes"
+          subtitle={t.metrics.latencySubtitle}
           icon={<Zap className="h-4 w-4" />}
         />
 
         <MetricCard
-          title="Active Incidents"
+          title={t.metrics.activeIncidents}
           value={data?.open_incidents_count || 0}
-          subtitle={counts.down > 0 ? 'Requires attention' : 'All systems operating within SLA'}
+          subtitle={counts.down > 0 ? t.metrics.attentionRequired : t.metrics.slaOk}
           highlight={hasOutage}
           icon={<AlertOctagon className="h-4 w-4" />}
         />
@@ -139,10 +141,10 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           <div>
             <h3 className="text-base font-semibold text-white flex items-center gap-2">
               <Activity className="h-4 w-4 text-emerald-400" />
-              Monitored Endpoints
+              {t.monitors.title}
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Real-time health status, response times, and estimated uptime availability.
+              {t.monitors.subtitle}
             </p>
           </div>
 
@@ -152,14 +154,14 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
               className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-100 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-surface-50 hover:text-white transition-colors"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
+              {t.monitors.refresh}
             </button>
             <button
               onClick={onOpenAddModal}
               className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 transition-colors shadow-sm shadow-emerald-950/40"
             >
               <Plus className="h-3.5 w-3.5" />
-              Add Monitor
+              {t.monitors.addMonitor}
             </button>
           </div>
         </div>
@@ -169,13 +171,13 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             <table className="w-full text-left text-xs">
               <thead className="border-b border-border bg-surface-200/50 text-slate-400 uppercase font-semibold">
                 <tr>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Name & URL</th>
-                  <th className="py-3 px-4">Availability</th>
-                  <th className="py-3 px-4">Avg Latency</th>
-                  <th className="py-3 px-4">Interval</th>
-                  <th className="py-3 px-4">Last Checked</th>
-                  <th className="py-3 px-4 text-right">Action</th>
+                  <th className="py-3 px-4">{t.monitors.colStatus}</th>
+                  <th className="py-3 px-4">{t.monitors.colNameUrl}</th>
+                  <th className="py-3 px-4">{t.monitors.colAvailability}</th>
+                  <th className="py-3 px-4">{t.monitors.colAvgLatency}</th>
+                  <th className="py-3 px-4">{t.monitors.colInterval}</th>
+                  <th className="py-3 px-4">{t.monitors.colLastChecked}</th>
+                  <th className="py-3 px-4 text-right">{t.monitors.colAction}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border text-slate-300">
@@ -230,18 +232,18 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                           {new Date(m.last_checked_at).toLocaleTimeString()}
                         </span>
                       ) : (
-                        <span className="text-slate-500">Pending</span>
+                        <span className="text-slate-500">{t.common.pending}</span>
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <button
                         onClick={(e) => handleCheckNow(m.id, e)}
                         disabled={checkingId === m.id}
-                        title="Run check immediately"
+                        title={t.monitors.checkNow}
                         className="inline-flex items-center gap-1 rounded border border-border bg-surface-100 px-2 py-1 text-[11px] font-medium text-slate-300 hover:bg-surface-50 hover:text-white transition-colors disabled:opacity-50"
                       >
                         <Play className={`h-3 w-3 ${checkingId === m.id ? 'animate-spin' : ''}`} />
-                        Check Now
+                        {t.monitors.checkNow}
                       </button>
                     </td>
                   </tr>
@@ -254,16 +256,16 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-surface-100 text-slate-400">
               <Activity className="h-6 w-6" />
             </div>
-            <h4 className="mt-4 text-sm font-semibold text-white">No Monitored Endpoints</h4>
+            <h4 className="mt-4 text-sm font-semibold text-white">{t.monitors.noMonitors}</h4>
             <p className="mt-1 text-xs text-slate-400 max-w-sm mx-auto">
-              You haven't configured any API endpoints yet. Add your first HTTP/HTTPS target to start monitoring.
+              {t.monitors.noMonitorsDesc}
             </p>
             <button
               onClick={onOpenAddModal}
               className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500 transition-colors shadow-sm"
             >
               <Plus className="h-4 w-4" />
-              Add First Monitor
+              {t.monitors.addFirst}
             </button>
           </div>
         )}
@@ -275,13 +277,13 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           <div className="flex items-center justify-between border-b border-border pb-3">
             <h4 className="text-sm font-semibold text-white flex items-center gap-2">
               <Clock className="h-4 w-4 text-slate-400" />
-              Recent Incidents & Outages
+              {t.incidents.recentIncidents}
             </h4>
             <button
               onClick={onNavigateToIncidents}
               className="text-xs text-emerald-400 hover:underline font-medium"
             >
-              View all incidents &rarr;
+              {t.incidents.viewAll}
             </button>
           </div>
 

@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import {
-  AlertOctagon,
   CheckCircle2,
-  Clock,
-  ExternalLink,
   RefreshCw,
   Search,
   ShieldAlert,
 } from 'lucide-react';
 import { Incident } from '../types';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface IncidentsPageProps {
   incidents: Incident[];
@@ -23,6 +21,7 @@ export const IncidentsPage: React.FC<IncidentsPageProps> = ({
   onRefresh,
   onNavigateToMonitor,
 }) => {
+  const { t } = useLanguage();
   const [filter, setFilter] = useState<'ALL' | 'OPEN' | 'RESOLVED'>('ALL');
   const [search, setSearch] = useState('');
 
@@ -41,7 +40,7 @@ export const IncidentsPage: React.FC<IncidentsPageProps> = ({
   const resolvedCount = incidents.filter((i) => i.status === 'RESOLVED').length;
 
   const formatDuration = (seconds: number | null): string => {
-    if (seconds === null || seconds === undefined) return 'Ongoing';
+    if (seconds === null || seconds === undefined) return t.incidents.ongoingOutage;
     const s = Math.round(seconds);
     if (s < 60) return `${s}s`;
     const mins = Math.floor(s / 60);
@@ -56,9 +55,9 @@ export const IncidentsPage: React.FC<IncidentsPageProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white tracking-tight">Incident Management</h2>
+          <h2 className="text-xl font-bold text-white tracking-tight">{t.incidents.title}</h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Log of detected outages, root failure reasons, recovery durations, and alerts.
+            {t.incidents.subtitle}
           </p>
         </div>
 
@@ -67,7 +66,7 @@ export const IncidentsPage: React.FC<IncidentsPageProps> = ({
           className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-100 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-surface-50 hover:text-white transition-colors"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
+          {t.common.refresh}
         </button>
       </div>
 
@@ -79,7 +78,7 @@ export const IncidentsPage: React.FC<IncidentsPageProps> = ({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search incident reason or monitor..."
+            placeholder={t.incidents.searchPlaceholder}
             className="w-full rounded-lg border border-border bg-surface-200 py-1.5 pl-9 pr-3 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
         </div>
@@ -93,7 +92,7 @@ export const IncidentsPage: React.FC<IncidentsPageProps> = ({
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            All ({incidents.length})
+            {t.incidents.filterAll} ({incidents.length})
           </button>
           <button
             onClick={() => setFilter('OPEN')}
@@ -104,7 +103,7 @@ export const IncidentsPage: React.FC<IncidentsPageProps> = ({
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-red-500" />
-            Open ({openCount})
+            {t.incidents.filterOpen} ({openCount})
           </button>
           <button
             onClick={() => setFilter('RESOLVED')}
@@ -115,7 +114,7 @@ export const IncidentsPage: React.FC<IncidentsPageProps> = ({
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            Resolved ({resolvedCount})
+            {t.incidents.filterResolved} ({resolvedCount})
           </button>
         </div>
       </div>
@@ -127,12 +126,12 @@ export const IncidentsPage: React.FC<IncidentsPageProps> = ({
             <table className="w-full text-left text-xs">
               <thead className="border-b border-border bg-surface-200/50 text-slate-400 uppercase font-semibold">
                 <tr>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Monitor</th>
-                  <th className="py-3 px-4">Failure Reason</th>
-                  <th className="py-3 px-4">Started At</th>
-                  <th className="py-3 px-4">Resolved At</th>
-                  <th className="py-3 px-4 text-right">Outage Duration</th>
+                  <th className="py-3 px-4">{t.incidents.colStatus}</th>
+                  <th className="py-3 px-4">{t.incidents.colMonitor}</th>
+                  <th className="py-3 px-4">{t.incidents.colReason}</th>
+                  <th className="py-3 px-4">{t.incidents.colStartedAt}</th>
+                  <th className="py-3 px-4">{t.incidents.colResolvedAt}</th>
+                  <th className="py-3 px-4 text-right">{t.incidents.colDuration}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border text-slate-300">
@@ -146,12 +145,12 @@ export const IncidentsPage: React.FC<IncidentsPageProps> = ({
                       {inc.status === 'OPEN' ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/10 px-2.5 py-0.5 text-xs font-semibold text-red-400">
                           <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse" />
-                          OPEN
+                          {t.incidents.badgeOpen}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
                           <CheckCircle2 className="h-3 w-3" />
-                          RESOLVED
+                          {t.incidents.badgeResolved}
                         </span>
                       )}
                     </td>
@@ -188,11 +187,11 @@ export const IncidentsPage: React.FC<IncidentsPageProps> = ({
       ) : (
         <div className="rounded-xl border border-dashed border-border p-12 text-center bg-surface-100/20">
           <ShieldAlert className="mx-auto h-8 w-8 text-slate-500" />
-          <h4 className="mt-3 text-sm font-semibold text-white">No Incidents Found</h4>
+          <h4 className="mt-3 text-sm font-semibold text-white">{t.incidents.noIncidents}</h4>
           <p className="mt-1 text-xs text-slate-400">
             {filter === 'OPEN'
-              ? 'Great news! There are currently no active open incidents.'
-              : 'No incidents match your search criteria.'}
+              ? t.incidents.noOpenIncidents
+              : t.incidents.noIncidentsDesc}
           </p>
         </div>
       )}

@@ -1,22 +1,136 @@
+<div align="center">
+
+![API Sentinel Banner](docs/banner.svg)
+
 # API Sentinel 🛡️
 
-> **Know when your API fails, before your users do.**
+**Know when your API fails, before your users do.**
+
+[English](README.md) • [Türkçe](README.tr.md)
 
 [![Release](https://img.shields.io/github/v/release/akiffurkan/api-sentinel?color=10b981&label=Release)](https://github.com/akiffurkan/api-sentinel/releases/latest)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Docker-slate.svg)](#)
+[![Tests: 25 Passed](https://img.shields.io/badge/Tests-25%20Passed%20(100%25)-emerald.svg)](#-automated-testing--ci-verification)
+[![Security: SSRF Protected](https://img.shields.io/badge/Security-SSRF%20Guarded-blue.svg)](#-strict-ssrf--network-security-policy)
+[![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20Docker-slate.svg)](#-installation--deployment-options)
 
-API Sentinel is a production-minded, open-source API monitoring platform designed for developers and engineering teams. It continuously monitors HTTP and HTTPS endpoints, detects outages, measures latency and availability, and sends instant incident notifications via Telegram.
+</div>
 
 ---
 
-## ⚡ Direct Download (Windows Executable)
+API Sentinel is an open-source, production-minded API monitoring platform and incident detection engine. It continuously probes your HTTP and HTTPS endpoints, tracks response latency, calculates estimated availability uptime, opens trackable incidents on failures, and immediately dispatches alerts via Telegram Bot API before your users are impacted.
 
-You can run API Sentinel as a standalone Windows application with zero setup (no Python, Node.js, or Docker required):
+---
 
-👉 **[Download APISentinel.exe (v1.0.0)](https://github.com/akiffurkan/api-sentinel/releases/download/v1.0.0/APISentinel.exe)** *(~23 MB, Portable)*
+## 📸 Real Dashboard Interface
 
-Just double-click `APISentinel.exe` to launch the native desktop window and monitoring engine. Your configurations and historical logs are automatically persisted locally.
+Here is API Sentinel running in real-time, monitoring public APIs with live latency history and availability tracking:
+
+<div align="center">
+
+![API Sentinel Dashboard Preview](docs/dashboard-preview.png)
+
+</div>
+
+---
+
+## 🛠️ Resolved Issues: `aiosqlite` Driver Fix (v1.0.1 / v1.0.2)
+
+In the initial v1.0.0 Windows release, dynamic SQLAlchemy async driver loading caused an unhandled startup exception:
+
+<div align="center">
+
+| Previous v1.0.0 Bug | Resolution in v1.0.1+ |
+|:---:|:---:|
+| <img src="docs/fixed-aiosqlite-issue.png" width="380" alt="v1.0.0 aiosqlite error" /> | ✅ **Fully Fixed:** `aiosqlite`, `greenlet`, and SQLite async dialects are now statically linked into the portable executable bundle with zero external dependencies. |
+
+</div>
+
+---
+
+## 📦 Installation & Deployment Options
+
+API Sentinel supports three deployment methods, each tailored to different operational needs:
+
+### Option A: 🪟 Standalone Windows Desktop App (Zero Setup)
+
+Run API Sentinel as a native desktop application without installing Python, Node.js, or Docker:
+
+👉 **[Download APISentinel.exe (v1.0.2)](https://github.com/akiffurkan/api-sentinel/releases/download/v1.0.2/APISentinel.exe)** *(~24 MB, Portable)*
+
+- Double-click `APISentinel.exe` to launch.
+- Automatic passwordless desktop admin session.
+- SQLite database and logs are stored automatically in `%LOCALAPPDATA%\APISentinel`.
+
+---
+
+### Option B: 🐳 Docker & Docker Compose (Server & Cloud Deployment)
+
+Deploy a multi-container stack with the FastAPI Web API, separate Background Worker, and static Nginx web client:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/akiffurkan/api-sentinel.git
+cd api-sentinel
+
+# 2. Configure environment
+cp .env.example .env
+```
+
+Edit `.env` to configure your administrator secret token and optional Telegram bot:
+
+```env
+APP_ENV=production
+DATABASE_URL=sqlite+aiosqlite:////app/data/sentinel.db
+ADMIN_TOKEN=your-strong-random-admin-secret-token
+
+# Telegram Outage Alerts (Optional)
+TELEGRAM_BOT_TOKEN=123456789:ABCdefGhIJKlmNoPQRstuVWXyz
+TELEGRAM_CHAT_ID=-1001234567890
+
+# Engine Defaults
+DEFAULT_INTERVAL=60
+DEFAULT_TIMEOUT=10
+MAX_CONCURRENT_CHECKS=20
+```
+
+```bash
+# 3. Start all services
+docker compose up -d --build
+```
+
+- **Web Dashboard:** [http://localhost:3000](http://localhost:3000)
+- **FastAPI OpenAPI Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Application Health Check:** [http://localhost:8000/healthz](http://localhost:8000/healthz)
+
+---
+
+### Option C: 🐧 Linux / Native Python Service (Bare-Metal / VPS)
+
+Run API Sentinel directly on any Linux distribution (Ubuntu/Debian, Fedora, Rocky, Alpine):
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/akiffurkan/api-sentinel.git
+cd api-sentinel
+
+# 2. Setup Python 3.12+ virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.txt
+
+# 3. Build the React frontend
+cd frontend
+npm install
+npm run build
+cd ..
+
+# 4. Start the Web API server
+uvicorn backend.main:app --host 0.0.0.0 --port 8000
+
+# 5. In a separate process or systemd service, run the background worker:
+python -m backend.worker
+```
 
 ---
 
@@ -31,198 +145,89 @@ Just double-click `APISentinel.exe` to launch the native desktop window and moni
   - **Spam Prevention:** Duplicate open incidents and repeated notifications are blocked while an outage is active.
 - **Strict SSRF & Network Security Engine:**
   - Enforces `http` and `https` schemes only.
-  - Completely blocks loopback (`127.0.0.0/8`, `::1`), RFC1918 private IP ranges (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), link-local (`169.254.0.0/16`), multicast, carrier-grade NAT, and cloud metadata services (`169.254.169.254`).
-  - Resolves hostnames to all IP addresses and evaluates every resolved target.
+  - Blocks loopback (`127.0.0.0/8`, `::1`), RFC1918 private ranges (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), link-local (`169.254.0.0/16`), multicast, carrier-grade NAT, and cloud metadata services (`169.254.169.254`).
+  - Resolves hostnames to all IP addresses and evaluates every resolved target (anti-DNS rebinding).
   - Re-evaluates every HTTP redirect hop against SSRF rules before following.
-  - Restricts connections to documented ports (80, 443, 8080, 8443).
+  - Restricts connections to documented safe ports (`80`, `443`, `8080`, `8443`).
   - Caps response reads at 1MB to prevent memory exhaustion; never persists response bodies.
 - **Estimated Availability & Metrics:**
   - Calculates check-based availability uptime percentage from persisted check logs.
   - Computes average, p95, min, and max latency.
 - **Telegram Bot Notifications:** Formatted outage and recovery alerts sent to your team chat or private bot channel. Never leaks API secrets in logs or API responses.
-- **Self-Hosted Single-Admin Authentication:** Protected with constant-time token comparison via `ADMIN_TOKEN`.
-- **Modular Monolith Architecture:** Decoupled FastAPI web service and background monitoring worker running concurrently against SQLite in WAL mode.
-- **Dark-First SaaS UI:** Built with React, TypeScript, Tailwind CSS, Lucide icons, and Recharts.
+- **Dual Language Support (i18n):** Complete English and Turkish interface with live instant language toggle (TR / EN).
 
 ---
 
-## 🏗️ Architecture
+## 🧪 Automated Testing & CI Verification
+
+API Sentinel enforces comprehensive automated test verification across unit, integration, and security layers:
 
 ```
-                                 ┌────────────────────────┐
-                                 │   Browser / Client     │
-                                 └───────────┬────────────┘
-                                             │ HTTP :3000
-                                             ▼
-                                 ┌────────────────────────┐
-                                 │      Nginx (Web)       │
-                                 │  Static React + Proxy  │
-                                 └───────────┬────────────┘
-                                             │ Proxy /api/*
-                                             ▼
-┌───────────────────────────┐    ┌────────────────────────┐
-│  Background Worker        │    │    FastAPI Web API     │
-│  - Bounded concurrency    │    │  - REST CRUD           │
-│  - Polling scheduler loop │    │  - Manual Check-Now    │
-│  - Duplicate prevention   │    │  - Constant-time Auth  │
-└─────────────┬─────────────┘    └───────────┬────────────┘
-              │                              │
-              ▼                              ▼
-      ┌──────────────────────────────────────────────┐
-      │  SQLite DB (WAL Mode) on Persistent Volume   │
-      │  - monitors, check_results, incidents       │
-      └──────────────────────────────────────────────┘
-              │
-              ▼ HTTP Probes (SSRF Guarded)
-      ┌──────────────────────────────────────────────┐
-      │  Public API Targets (GitHub, Stripe, etc.)   │
-      └──────────────────────────────────────────────┘
-              │
-              ▼ Alerts on Outage / Recovery
-      ┌──────────────────────────────────────────────┐
-      │  Telegram Bot API (@BotFather)               │
-      └──────────────────────────────────────────────┘
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-8.4.2, pluggy-1.7.0
+rootdir: D:\Projeler\API Sentinel
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.16.0, asyncio-0.26.0, mock-3.17.0
+collected 25 items
+
+tests/test_api_monitors.py::test_auth_enforcement PASSED                 [  4%]
+tests/test_api_monitors.py::test_monitor_crud_and_ssrf PASSED            [  8%]
+tests/test_api_monitors.py::test_manual_check_now_action PASSED          [ 12%]
+tests/test_api_overview_and_incidents.py::test_healthz_endpoint PASSED   [ 16%]
+tests/test_api_overview_and_incidents.py::test_overview_and_incidents PASSED [ 20%]
+tests/test_checker.py::test_checker_success PASSED                       [ 24%]
+tests/test_checker.py::test_checker_unexpected_status_code PASSED        [ 28%]
+tests/test_checker.py::test_checker_timeout PASSED                       [ 32%]
+tests/test_checker.py::test_checker_connect_error PASSED                 [ 36%]
+tests/test_checker.py::test_checker_blocks_redirect_to_internal_ip PASSED [ 40%]
+tests/test_incident_manager.py::test_incident_lifecycle PASSED           [ 44%]
+tests/test_notifier.py::test_mask_secret PASSED                          [ 48%]
+tests/test_notifier.py::test_notifier_send_outage_alert PASSED           [ 52%]
+tests/test_notifier.py::test_notifier_send_recovery_alert PASSED         [ 56%]
+tests/test_scheduler_and_analytics.py::test_analytics_uptime_and_latency_calculations PASSED [ 60%]
+tests/test_scheduler_and_analytics.py::test_scheduler_deduplication_and_tick PASSED [ 64%]
+tests/test_ssrf.py::test_ssrf_rejects_invalid_schemes PASSED             [ 68%]
+tests/test_ssrf.py::test_ssrf_rejects_empty_or_malformed PASSED          [ 72%]
+tests/test_ssrf.py::test_ssrf_rejects_userinfo PASSED                    [ 76%]
+tests/test_ssrf.py::test_ssrf_rejects_loopback_and_local PASSED          [ 80%]
+tests/test_ssrf.py::test_ssrf_rejects_private_networks PASSED            [ 84%]
+tests/test_ssrf.py::test_ssrf_rejects_cloud_metadata_and_link_local PASSED [ 88%]
+tests/test_ssrf.py::test_ssrf_rejects_disallowed_ports PASSED            [ 92%]
+tests/test_ssrf.py::test_ssrf_allows_valid_public_domain PASSED          [ 96%]
+tests/test_ssrf.py::test_ssrf_rejects_domain_resolving_to_private_ip PASSED [100%]
+
+======================== 25 passed, 100% success rate ========================
 ```
 
----
-
-## 🚀 Quick Start with Docker Compose
-
-### 1. Clone & Configure Environment
+Run tests locally:
 
 ```bash
-git clone https://github.com/apisentinel/apisentinel.git
-cd apisentinel
-
-# Copy the environment template
-cp .env.example .env
-```
-
-Edit `.env` to configure your admin token and optional Telegram alerts:
-
-```ini
-APP_ENV=production
-ADMIN_TOKEN=generate-a-strong-secret-token-here
-
-# Optional: Telegram Alerts
-TELEGRAM_BOT_TOKEN=123456789:ABCdefGhIJKlmNoPQRstuVWXyz
-TELEGRAM_CHAT_ID=-1001234567890
-```
-
-### 2. Start Services
-
-```bash
-docker compose up -d --build
-```
-
-### 3. Access the Platform
-
-- **Dashboard:** [http://localhost:3000](http://localhost:3000)
-- **API Server & OpenAPI Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Health Check:** [http://localhost:8000/healthz](http://localhost:8000/healthz)
-
-Enter your `ADMIN_TOKEN` on first dashboard visit to authenticate your admin session.
-
----
-
-## 🛠️ Local Development Setup
-
-### Backend (Python 3.12+)
-
-```bash
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-pip install -r backend/requirements.txt
-
-# Run test suite
 pytest -v
-
-# Start API server
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
-
-# Start background monitoring worker (in another terminal)
-python -m backend.worker
 ```
-
-### Frontend (Node 20+)
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Visit [http://localhost:5173](http://localhost:5173).
-
----
-
-## 🔒 Security & SSRF Protection
-
-API Sentinel treats all user-supplied monitor URLs as untrusted input. The SSRF engine (`backend/core/ssrf.py`) enforces:
-
-1. **Protocol Restrictions:** Only `http://` and `https://` URLs are accepted.
-2. **Credential Ban:** URLs containing userinfo (e.g. `http://user:pass@host/`) are rejected.
-3. **Restricted Hostnames:** Banned hostnames (`localhost`, `*.localhost`, `*.local`, `metadata.google.internal`) are blocked before DNS lookup.
-4. **Comprehensive IP Range Validation:** Every resolved IP (IPv4 and IPv6) is validated:
-   - Loopback: `127.0.0.0/8`, `::1`
-   - RFC1918 Private: `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`
-   - Link-local: `169.254.0.0/16`, `fe80::/10`
-   - Multicast: `224.0.0.0/4`, `ff00::/8`
-   - Carrier-grade NAT: `100.64.0.0/10`
-   - Cloud metadata IP: `169.254.169.254`
-5. **Port Whitelist:** Only standard HTTP/HTTPS ports (80, 443, 8080, 8443) are allowed.
-6. **Redirect Re-validation:** Automatically following redirects is disabled. Instead, each redirect hop is manually inspected and re-validated through the full SSRF policy before following.
-7. **Resource Limits:** Probed responses stream a maximum of 1MB and terminate; response bodies are never saved to disk or database.
 
 ---
 
 ## 📡 REST API Reference
 
-All management endpoints require `Authorization: Bearer <ADMIN_TOKEN>` or `X-API-Key: <ADMIN_TOKEN>`.
-
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/healthz` | Public health status (`{"status":"ok","uptime_seconds":...}`) |
-| `GET` | `/api/overview` | Dashboard metrics, status counts, and recent incidents |
-| `GET` | `/api/monitors` | List all monitors with uptime % and avg latency |
-| `POST` | `/api/monitors` | Create a new monitor (SSRF validated) |
-| `GET` | `/api/monitors/{id}` | Detailed monitor stats, latency history, and incidents |
-| `PATCH` | `/api/monitors/{id}` | Update monitor configuration or pause/resume |
+| `GET` | `/healthz` | Unauthenticated application health status |
+| `GET` | `/api/auth/verify` | Validates session `ADMIN_TOKEN` |
+| `GET` | `/api/overview` | Dashboard summary, system uptime, and monitor stats |
+| `GET` | `/api/monitors` | List all configured endpoint monitors |
+| `POST` | `/api/monitors` | Create a new monitored target (SSRF validated) |
+| `GET` | `/api/monitors/{id}` | Detailed monitor metrics, p95 latency, and incident timeline |
+| `PATCH` | `/api/monitors/{id}` | Update monitor configuration or pause/resume checks |
 | `DELETE` | `/api/monitors/{id}` | Delete monitor and its historical records |
-| `GET` | `/api/monitors/{id}/checks` | Paginated check result history |
-| `POST` | `/api/monitors/{id}/check-now` | Trigger an immediate manual check |
-| `GET` | `/api/incidents` | List incidents (filter by `status=OPEN` or `status=RESOLVED`) |
-| `GET` | `/api/settings/info` | Inspect masked credentials and engine settings |
-| `POST` | `/api/settings/telegram-test` | Dispatch a test alert to Telegram |
-
----
-
-## 🧪 Testing
-
-The test suite covers:
-- SSRF evasion attempts (loopback, private subnets, cloud metadata, disallowed ports, bad schemes, user credentials, DNS rebinding simulations).
-- HTTP checker response handling (200 OK, status mismatch, connect failure, timeout, size limits, redirect validation).
-- Incident status lifecycle (single failure -> DEGRADED, two failures -> DOWN + Telegram alert, deduplication while DOWN, recovery -> RECOVERED + resolution alert).
-- Monitor CRUD, auth token enforcement, `/healthz`, and `/api/overview`.
-- Scheduler tick polling, concurrency bounds, and duplicate check prevention.
-
-```bash
-pytest -v
-```
-
----
-
-## 📋 Honest Limitations (v1.0.0 MVP)
-
-- **Single Admin:** Intended for single administrators or small teams sharing a central secret. Multi-tenant team RBAC is out of scope for the MVP.
-- **Estimated Availability:** Uptime percentage is calculated from persisted check results over the recorded window rather than analog wire continuity.
-- **HTTP GET Probes Only:** The MVP focuses exclusively on HTTP GET checks. Custom POST bodies, TLS certificate expiration dates, and custom headers are deferred to future releases to preserve strict security guarantees.
+| `GET` | `/api/monitors/{id}/checks` | Historical latency and probe result logs |
+| `POST` | `/api/monitors/{id}/check-now` | Trigger an immediate manual probe |
+| `GET` | `/api/incidents` | Incident history, outage durations, and recovery logs |
+| `GET` | `/api/settings/info` | Safe configuration status (secrets masked) |
+| `POST` | `/api/settings/test-telegram` | Dispatch test notification to verify bot setup |
 
 ---
 
 ## 📄 License
 
-MIT License. See [LICENSE](LICENSE) for details.
+This project is open-source and licensed under the [MIT License](LICENSE).

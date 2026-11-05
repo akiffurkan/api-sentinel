@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   Bell,
   CheckCircle,
-  Key,
   RefreshCw,
   Send,
   Shield,
@@ -12,9 +11,11 @@ import {
 import { SettingsInfo } from '../types';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export const SettingsPage: React.FC = () => {
   const { isAuthRequired } = useAuth();
+  const { t } = useLanguage();
   const [settings, setSettings] = useState<SettingsInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [testingTelegram, setTestingTelegram] = useState(false);
@@ -48,7 +49,7 @@ export const SettingsPage: React.FC = () => {
     } catch (err: any) {
       setTelegramResult({
         success: false,
-        message: err.message || 'Failed to dispatch test notification.',
+        message: err.message || t.settings.testNotification,
       });
     } finally {
       setTestingTelegram(false);
@@ -60,7 +61,7 @@ export const SettingsPage: React.FC = () => {
       <div className="flex h-96 items-center justify-center">
         <div className="flex items-center gap-3 text-sm text-slate-400">
           <RefreshCw className="h-5 w-5 animate-spin text-emerald-400" />
-          Loading settings...
+          {t.common.loading}
         </div>
       </div>
     );
@@ -69,9 +70,9 @@ export const SettingsPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-4xl animate-fade-in">
       <div>
-        <h2 className="text-xl font-bold text-white tracking-tight">System Settings & Integrations</h2>
+        <h2 className="text-xl font-bold text-white tracking-tight">{t.settings.title}</h2>
         <p className="text-xs text-slate-400 mt-0.5">
-          Configure incident notification channels, inspect operational parameters, and verify security policies.
+          {t.settings.subtitle}
         </p>
       </div>
 
@@ -83,9 +84,9 @@ export const SettingsPage: React.FC = () => {
               <Bell className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white">Telegram Notifications</h3>
+              <h3 className="text-sm font-semibold text-white">{t.settings.telegramTitle}</h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Instant outage alerts when endpoints fail and recovery notifications when resolved.
+                {t.settings.telegramDesc}
               </p>
             </div>
           </div>
@@ -97,22 +98,22 @@ export const SettingsPage: React.FC = () => {
                 : 'bg-slate-500/10 border-slate-500/30 text-slate-400'
             }`}
           >
-            {settings?.telegram.configured ? 'Active' : 'Unconfigured'}
+            {settings?.telegram.configured ? t.settings.statusActive : t.settings.statusUnconfigured}
           </span>
         </div>
 
         <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div className="rounded-lg border border-border bg-surface-200/50 p-3">
-            <span className="text-slate-500 block">Bot Token</span>
+            <span className="text-slate-500 block">{t.settings.botToken}</span>
             <span className="font-mono text-slate-300 mt-1 block">
-              {settings?.telegram.bot_token || 'Not Configured'}
+              {settings?.telegram.bot_token || t.settings.statusUnconfigured}
             </span>
           </div>
 
           <div className="rounded-lg border border-border bg-surface-200/50 p-3">
-            <span className="text-slate-500 block">Target Chat ID</span>
+            <span className="text-slate-500 block">{t.settings.targetChatId}</span>
             <span className="font-mono text-slate-300 mt-1 block">
-              {settings?.telegram.chat_id || 'Not Configured'}
+              {settings?.telegram.chat_id || t.settings.statusUnconfigured}
             </span>
           </div>
         </div>
@@ -145,7 +146,7 @@ export const SettingsPage: React.FC = () => {
             className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-200 px-3.5 py-1.5 text-xs font-semibold text-slate-200 hover:bg-surface-50 hover:text-white disabled:opacity-40 transition-colors"
           >
             <Send className={`h-3.5 w-3.5 ${testingTelegram ? 'animate-spin' : ''}`} />
-            {testingTelegram ? 'Sending Test...' : 'Send Test Notification'}
+            {testingTelegram ? t.settings.sendingTest : t.settings.testNotification}
           </button>
         </div>
       </div>
@@ -157,40 +158,38 @@ export const SettingsPage: React.FC = () => {
             <Shield className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">SSRF & Network Security Policy</h3>
+            <h3 className="text-sm font-semibold text-white">{t.settings.securityTitle}</h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Enforced on every HTTP request and redirect target to protect infrastructure.
+              {t.settings.securityDesc}
             </p>
           </div>
         </div>
 
         <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           <div className="rounded-lg border border-border bg-surface-200/50 p-3">
-            <span className="text-slate-500 block">Allowed Ports</span>
+            <span className="text-slate-500 block">{t.settings.allowedPorts}</span>
             <span className="font-mono text-emerald-400 font-semibold mt-1 block">
               {settings?.security.allowed_ports.join(', ')}
             </span>
           </div>
 
           <div className="rounded-lg border border-border bg-surface-200/50 p-3">
-            <span className="text-slate-500 block">Max Redirects</span>
+            <span className="text-slate-500 block">{t.settings.maxRedirects}</span>
             <span className="font-mono text-slate-200 font-semibold mt-1 block">
-              {settings?.security.max_redirects} (Re-validated hops)
+              {settings?.security.max_redirects} ({t.settings.revalidatedHops})
             </span>
           </div>
 
           <div className="rounded-lg border border-border bg-surface-200/50 p-3">
-            <span className="text-slate-500 block">Max Response Size</span>
+            <span className="text-slate-500 block">{t.settings.maxResponseSize}</span>
             <span className="font-mono text-slate-200 font-semibold mt-1 block">
-              {(settings?.security.max_response_bytes || 1048576) / (1024 * 1024)} MB (Capped)
+              {(settings?.security.max_response_bytes || 1048576) / (1024 * 1024)} MB ({t.settings.capped})
             </span>
           </div>
         </div>
 
         <p className="mt-4 text-[11px] text-slate-500 leading-relaxed">
-          Security policy automatically rejects requests targeting loopback addresses (127.0.0.1, ::1),
-          RFC1918 private ranges (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), carrier-grade NAT,
-          link-local addresses (169.254.0.0/16), and cloud metadata services.
+          {t.settings.securityExplanation}
         </p>
       </div>
 
@@ -201,37 +200,37 @@ export const SettingsPage: React.FC = () => {
             <Sliders className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">Monitoring Engine Defaults</h3>
+            <h3 className="text-sm font-semibold text-white">{t.settings.engineTitle}</h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Scheduling loop parameters and concurrency boundaries.
+              {t.settings.engineDesc}
             </p>
           </div>
         </div>
 
         <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
           <div className="rounded-lg border border-border bg-surface-200/50 p-3">
-            <span className="text-slate-500 block text-[11px] font-sans">Default Interval</span>
+            <span className="text-slate-500 block text-[11px] font-sans">{t.settings.defaultInterval}</span>
             <span className="text-slate-200 font-semibold mt-1 block">
               {settings?.engine.default_interval}s
             </span>
           </div>
 
           <div className="rounded-lg border border-border bg-surface-200/50 p-3">
-            <span className="text-slate-500 block text-[11px] font-sans">Default Timeout</span>
+            <span className="text-slate-500 block text-[11px] font-sans">{t.settings.defaultTimeout}</span>
             <span className="text-slate-200 font-semibold mt-1 block">
               {settings?.engine.default_timeout}s
             </span>
           </div>
 
           <div className="rounded-lg border border-border bg-surface-200/50 p-3">
-            <span className="text-slate-500 block text-[11px] font-sans">Max Concurrency</span>
+            <span className="text-slate-500 block text-[11px] font-sans">{t.settings.maxConcurrency}</span>
             <span className="text-emerald-400 font-semibold mt-1 block">
-              {settings?.engine.max_concurrent_checks} Probes
+              {settings?.engine.max_concurrent_checks} {t.settings.probes}
             </span>
           </div>
 
           <div className="rounded-lg border border-border bg-surface-200/50 p-3">
-            <span className="text-slate-500 block text-[11px] font-sans">Worker Poll Loop</span>
+            <span className="text-slate-500 block text-[11px] font-sans">{t.settings.workerPollLoop}</span>
             <span className="text-slate-200 font-semibold mt-1 block">
               {settings?.engine.worker_poll_interval}s
             </span>

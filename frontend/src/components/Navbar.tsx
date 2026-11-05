@@ -1,6 +1,7 @@
 import React from 'react';
-import { Activity, ShieldCheck, AlertTriangle, Settings as SettingsIcon, LogOut, Radio } from 'lucide-react';
+import { Activity, AlertTriangle, Settings as SettingsIcon, LogOut, Radio, Languages } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface NavbarProps {
   activeTab: 'overview' | 'monitors' | 'incidents' | 'settings';
@@ -14,6 +15,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   openIncidentsCount,
 }) => {
   const { isAuthRequired, logout } = useAuth();
+  const { language, toggleLanguage, t } = useLanguage();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-surface-200/95 backdrop-blur-md">
@@ -24,14 +26,28 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => setActiveTab('overview')}
             className="flex cursor-pointer items-center gap-3 transition-opacity hover:opacity-90"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-              <ShieldCheck className="h-5 w-5" />
+            {/* Custom Sentinel Shield SVG Logo */}
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 shadow-sm shadow-emerald-500/10">
+              <svg viewBox="0 0 48 48" className="h-5 w-5 fill-none" stroke="currentColor">
+                <path
+                  d="M24 4L7 11V22C7 32.5 14.2 42.1 24 44C33.8 42.1 41 32.5 41 22V11L24 4Z"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M14 24H18L21 17L27 31L30 24H34"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </div>
             <div>
               <span className="font-bold text-base tracking-tight text-white flex items-center gap-1.5">
-                API Sentinel
+                {t.brand}
                 <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-mono text-emerald-400 font-semibold border border-emerald-500/20">
-                  v1.0
+                  v1.0.1
                 </span>
               </span>
             </div>
@@ -48,7 +64,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <Activity className="h-4 w-4" />
-              Overview
+              {t.nav.overview}
             </button>
 
             <button
@@ -60,7 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <Radio className="h-4 w-4" />
-              Monitors
+              {t.nav.monitors}
             </button>
 
             <button
@@ -72,7 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <AlertTriangle className="h-4 w-4" />
-              Incidents
+              {t.nav.incidents}
               {openIncidentsCount > 0 && (
                 <span className="ml-1 rounded-full bg-red-500/20 border border-red-500/40 px-1.5 py-0.2 text-[11px] font-mono font-bold text-red-400">
                   {openIncidentsCount}
@@ -89,26 +105,38 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <SettingsIcon className="h-4 w-4" />
-              Settings
+              {t.nav.settings}
             </button>
           </nav>
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          {/* Language Switcher */}
+          <button
+            onClick={toggleLanguage}
+            title={language === 'en' ? 'Türkçe diline geç' : 'Switch to English'}
+            className="flex items-center gap-1.5 rounded-md border border-border bg-surface-100 px-2.5 py-1 text-xs font-semibold text-slate-300 hover:border-slate-700 hover:bg-surface-50 hover:text-white transition-all shadow-sm"
+          >
+            <Languages className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="font-mono uppercase tracking-wider">{language}</span>
+            <span className="text-[10px] text-slate-500">|</span>
+            <span className="text-[11px] text-slate-400">{language === 'en' ? '🇹🇷 TR' : '🇬🇧 EN'}</span>
+          </button>
+
           <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400 bg-surface-100/80 px-2.5 py-1 rounded-md border border-border">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Worker Active</span>
+            <span>{t.nav.workerActive}</span>
           </div>
 
           {isAuthRequired && (
             <button
               onClick={logout}
-              title="Sign out of Admin Session"
-              className="flex items-center gap-1.5 rounded-md border border-border bg-surface-100 px-2.5 py-1.5 text-xs font-medium text-slate-400 hover:border-slate-700 hover:text-white transition-colors"
+              title={t.nav.logout}
+              className="flex items-center gap-1.5 rounded-md border border-border bg-surface-100 px-2.5 py-1 text-xs font-medium text-slate-400 hover:border-slate-700 hover:text-white transition-colors"
             >
               <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Logout</span>
+              <span className="hidden sm:inline">{t.nav.logout}</span>
             </button>
           )}
         </div>
@@ -123,7 +151,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           }`}
         >
           <Activity className="h-3.5 w-3.5" />
-          Overview
+          {t.nav.overview}
         </button>
         <button
           onClick={() => setActiveTab('monitors')}
@@ -132,7 +160,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           }`}
         >
           <Radio className="h-3.5 w-3.5" />
-          Monitors
+          {t.nav.monitors}
         </button>
         <button
           onClick={() => setActiveTab('incidents')}
@@ -141,7 +169,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           }`}
         >
           <AlertTriangle className="h-3.5 w-3.5" />
-          Incidents
+          {t.nav.incidents}
           {openIncidentsCount > 0 && (
             <span className="rounded-full bg-red-500/20 px-1 text-[10px] text-red-400">
               {openIncidentsCount}
@@ -155,7 +183,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           }`}
         >
           <SettingsIcon className="h-3.5 w-3.5" />
-          Settings
+          {t.nav.settings}
         </button>
       </div>
     </header>

@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import {
   Activity,
   Edit2,
-  ExternalLink,
-  MoreVertical,
   Pause,
   Play,
   Plus,
@@ -15,6 +13,7 @@ import { Monitor } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
 import { EditMonitorModal } from '../components/EditMonitorModal';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { useLanguage } from '../i18n/LanguageContext';
 import { api } from '../services/api';
 
 interface MonitorsPageProps {
@@ -32,6 +31,7 @@ export const MonitorsPage: React.FC<MonitorsPageProps> = ({
   onNavigateToMonitor,
   onOpenAddModal,
 }) => {
+  const { t } = useLanguage();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [editingMonitor, setEditingMonitor] = useState<Monitor | null>(null);
@@ -91,14 +91,22 @@ export const MonitorsPage: React.FC<MonitorsPageProps> = ({
     }
   };
 
+  const filterOptions = [
+    { key: 'ALL', label: t.monitors.filterAll },
+    { key: 'UP', label: t.monitors.filterUp },
+    { key: 'DEGRADED', label: t.monitors.filterDegraded },
+    { key: 'DOWN', label: t.monitors.filterDown },
+    { key: 'PAUSED', label: t.monitors.filterPaused },
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Top Header & Actions */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white tracking-tight">Monitored Endpoints</h2>
+          <h2 className="text-xl font-bold text-white tracking-tight">{t.monitors.title}</h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Manage target endpoints, review availability metrics, and trigger real-time probes.
+            {t.monitors.subtitle}
           </p>
         </div>
 
@@ -108,14 +116,14 @@ export const MonitorsPage: React.FC<MonitorsPageProps> = ({
             className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-100 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-surface-50 hover:text-white transition-colors"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t.monitors.refresh}
           </button>
           <button
             onClick={onOpenAddModal}
             className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-medium text-white hover:bg-emerald-500 transition-colors shadow-sm shadow-emerald-950/40"
           >
             <Plus className="h-4 w-4" />
-            Add Monitor
+            {t.monitors.addMonitor}
           </button>
         </div>
       </div>
@@ -128,23 +136,23 @@ export const MonitorsPage: React.FC<MonitorsPageProps> = ({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or URL..."
+            placeholder={t.monitors.searchPlaceholder}
             className="w-full rounded-lg border border-border bg-surface-200 py-1.5 pl-9 pr-3 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
         </div>
 
         <div className="flex items-center gap-1 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-          {['ALL', 'UP', 'DEGRADED', 'DOWN', 'PAUSED'].map((filter) => (
+          {filterOptions.map(({ key, label }) => (
             <button
-              key={filter}
-              onClick={() => setStatusFilter(filter)}
+              key={key}
+              onClick={() => setStatusFilter(key)}
               className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-                statusFilter === filter
+                statusFilter === key
                   ? 'bg-surface-50 text-white border border-border'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              {filter}
+              {label}
             </button>
           ))}
         </div>
@@ -172,7 +180,7 @@ export const MonitorsPage: React.FC<MonitorsPageProps> = ({
                     {m.name}
                     {!m.enabled && (
                       <span className="rounded bg-zinc-800 px-1.5 py-0.2 text-[10px] font-mono text-zinc-400">
-                        Monitoring Suspended
+                        {t.monitors.monitoringSuspended}
                       </span>
                     )}
                   </h3>
@@ -180,15 +188,15 @@ export const MonitorsPage: React.FC<MonitorsPageProps> = ({
                     <span>{m.url}</span>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
-                    <span>Interval: {m.interval_seconds}s</span>
+                    <span>{t.monitors.colInterval}: {m.interval_seconds}s</span>
                     <span>&bull;</span>
-                    <span>Timeout: {m.timeout_seconds}s</span>
+                    <span>{t.detail.timeout}: {m.timeout_seconds}s</span>
                     <span>&bull;</span>
-                    <span>Expected: [{m.expected_status_codes.join(', ')}]</span>
+                    <span>{t.detail.expectedStatus}: [{m.expected_status_codes.join(', ')}]</span>
                     {m.last_checked_at && (
                       <>
                         <span>&bull;</span>
-                        <span>Checked {new Date(m.last_checked_at).toLocaleTimeString()}</span>
+                        <span>{t.monitors.colLastChecked} {new Date(m.last_checked_at).toLocaleTimeString()}</span>
                       </>
                     )}
                   </div>
@@ -199,14 +207,14 @@ export const MonitorsPage: React.FC<MonitorsPageProps> = ({
               <div className="mt-4 md:mt-0 flex items-center justify-between md:justify-end gap-6 w-full md:w-auto border-t md:border-t-0 border-border pt-3 md:pt-0">
                 <div className="flex items-center gap-6 text-right">
                   <div>
-                    <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Uptime</div>
+                    <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">{t.monitors.colAvailability}</div>
                     <div className="text-sm font-bold font-mono text-emerald-400">
                       {m.uptime_percentage !== null ? `${m.uptime_percentage.toFixed(1)}%` : '--'}
                     </div>
                   </div>
 
                   <div>
-                    <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Avg Latency</div>
+                    <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">{t.monitors.colAvgLatency}</div>
                     <div className="text-sm font-bold font-mono text-slate-200">
                       {m.average_latency_ms !== null ? `${Math.round(m.average_latency_ms)} ms` : '--'}
                     </div>
@@ -217,7 +225,7 @@ export const MonitorsPage: React.FC<MonitorsPageProps> = ({
                   <button
                     onClick={(e) => handleCheckNow(m.id, e)}
                     disabled={checkingId === m.id}
-                    title="Run check immediately"
+                    title={t.monitors.checkNow}
                     className="rounded-lg border border-border bg-surface-200 p-2 text-slate-300 hover:border-slate-600 hover:text-white transition-colors disabled:opacity-50"
                   >
                     <Play className={`h-3.5 w-3.5 ${checkingId === m.id ? 'animate-spin' : ''}`} />
@@ -225,7 +233,7 @@ export const MonitorsPage: React.FC<MonitorsPageProps> = ({
 
                   <button
                     onClick={(e) => handleToggleEnabled(m, e)}
-                    title={m.enabled ? 'Pause monitoring' : 'Resume monitoring'}
+                    title={m.enabled ? t.monitors.pause : t.monitors.resume}
                     className="rounded-lg border border-border bg-surface-200 p-2 text-slate-300 hover:border-slate-600 hover:text-white transition-colors"
                   >
                     {m.enabled ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5 text-emerald-400" />}
@@ -233,7 +241,7 @@ export const MonitorsPage: React.FC<MonitorsPageProps> = ({
 
                   <button
                     onClick={() => setEditingMonitor(m)}
-                    title="Edit Monitor"
+                    title={t.monitors.edit}
                     className="rounded-lg border border-border bg-surface-200 p-2 text-slate-300 hover:border-slate-600 hover:text-white transition-colors"
                   >
                     <Edit2 className="h-3.5 w-3.5" />
@@ -241,7 +249,7 @@ export const MonitorsPage: React.FC<MonitorsPageProps> = ({
 
                   <button
                     onClick={() => setDeletingMonitor(m)}
-                    title="Delete Monitor"
+                    title={t.monitors.delete}
                     className="rounded-lg border border-border bg-surface-200 p-2 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 transition-colors"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -254,9 +262,9 @@ export const MonitorsPage: React.FC<MonitorsPageProps> = ({
       ) : (
         <div className="rounded-xl border border-dashed border-border p-12 text-center bg-surface-100/20">
           <Activity className="mx-auto h-8 w-8 text-slate-500" />
-          <h4 className="mt-3 text-sm font-semibold text-white">No Matching Monitors</h4>
+          <h4 className="mt-3 text-sm font-semibold text-white">{t.monitors.noMonitors}</h4>
           <p className="mt-1 text-xs text-slate-400">
-            {search ? `No monitors found matching "${search}"` : 'No monitors found in this filter category.'}
+            {search ? `${t.monitors.noMonitors} "${search}"` : t.monitors.noMonitorsDesc}
           </p>
         </div>
       )}
@@ -275,9 +283,9 @@ export const MonitorsPage: React.FC<MonitorsPageProps> = ({
       {deletingMonitor && (
         <ConfirmationModal
           isOpen={true}
-          title={`Delete "${deletingMonitor.name}"?`}
-          message="This action will permanently delete the endpoint monitor and erase all historical check results and incident records."
-          confirmLabel="Delete Monitor"
+          title={`${t.monitors.delete} "${deletingMonitor.name}"?`}
+          message={t.monitors.deleteConfirm}
+          confirmLabel={t.monitors.delete}
           isProcessing={isDeleting}
           onConfirm={handleDeleteConfirm}
           onCancel={() => setDeletingMonitor(null)}
