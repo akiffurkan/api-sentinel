@@ -44,6 +44,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsAuthenticated(false);
         }
       } else {
+        // Try desktop mode auto-token
+        try {
+          const desktop = await api.getDesktopToken();
+          if (desktop.token) {
+            localStorage.setItem('sentinel_admin_token', desktop.token);
+            setToken(desktop.token);
+            setIsAuthenticated(true);
+            return;
+          }
+        } catch {
+          // not desktop mode
+        }
         setIsAuthenticated(!status.auth_required);
       }
     } catch (err: any) {

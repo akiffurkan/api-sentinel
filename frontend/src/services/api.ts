@@ -61,6 +61,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 export const api = {
   // Auth
   getAuthStatus: () => request<AuthStatus>('/auth/status'),
+  getDesktopToken: () => request<{ token: string | null }>('/auth/desktop-token'),
   verifyToken: () => request<{ valid: boolean; message: string }>('/auth/verify', { method: 'POST' }),
 
   // Overview

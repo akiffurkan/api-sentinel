@@ -20,6 +20,16 @@ async def get_auth_status() -> Dict[str, Any]:
     }
 
 
+@router.get("/auth/desktop-token")
+async def get_desktop_token() -> Dict[str, Any]:
+    """Provides desktop session token when running in local standalone desktop mode."""
+    import os
+    if os.environ.get("DESKTOP_MODE") == "1":
+        settings = get_settings()
+        return {"token": settings.ADMIN_TOKEN}
+    return {"token": None}
+
+
 @router.post("/auth/verify")
 async def verify_token(_auth: bool = Depends(verify_admin_token)) -> Dict[str, Any]:
     """Verify admin token validity."""
